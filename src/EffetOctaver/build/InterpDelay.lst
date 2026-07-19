@@ -1,0 +1,93 @@
+ARM GAS  /tmp/ccZs04EX.s 			page 1
+
+
+   1              		.cpu cortex-m7
+   2              		.arch armv7e-m
+   3              		.fpu fpv5-d16
+   4              		.eabi_attribute 28, 1
+   5              		.eabi_attribute 20, 1
+   6              		.eabi_attribute 21, 1
+   7              		.eabi_attribute 23, 3
+   8              		.eabi_attribute 24, 1
+   9              		.eabi_attribute 25, 1
+  10              		.eabi_attribute 26, 1
+  11              		.eabi_attribute 30, 2
+  12              		.eabi_attribute 34, 1
+  13              		.eabi_attribute 18, 4
+  14              		.file	"InterpDelay.cpp"
+  15              		.text
+  16              	.Ltext0:
+  17              		.cfi_sections	.debug_frame
+  18              		.file 1 "Dattorro/dsp/delays/InterpDelay.cpp"
+  19              		.global	hold
+  20              		.section	.data.hold,"aw"
+  21              		.align	2
+  24              	hold:
+  25 0000 0000803F 		.word	1065353216
+  26              		.global	clearPopCancelValue
+  27              		.section	.data.clearPopCancelValue,"aw"
+  28              		.align	2
+  31              	clearPopCancelValue:
+  32 0000 0000803F 		.word	1065353216
+  33              		.global	triggerClear
+  34              		.section	.bss.triggerClear,"aw",%nobits
+  37              	triggerClear:
+  38 0000 00       		.space	1
+  39              		.global	count
+  40              		.section	.bss.count,"aw",%nobits
+  41              		.align	2
+  44              	count:
+  45 0000 00000000 		.space	4
+  46              		.global	sdramData
+  47              		.section	.bss.sdramData,"aw",%nobits
+  48              		.align	2
+  51              	sdramData:
+  52 0000 00000000 		.space	1924000
+  52      00000000 
+  52      00000000 
+  52      00000000 
+  52      00000000 
+  53              		.text
+  54              	.Letext0:
+  55              		.file 2 "/usr/arm-none-eabi/include/machine/_default_types.h"
+  56              		.file 3 "/usr/arm-none-eabi/include/sys/_stdint.h"
+  57              		.file 4 "/usr/arm-none-eabi/include/stdint.h"
+  58              		.file 5 "/usr/lib/gcc/arm-none-eabi/15.2.0/include/stddef.h"
+  59              		.file 6 "/usr/arm-none-eabi/include/c++/15.2.0/type_traits"
+  60              		.file 7 "/usr/arm-none-eabi/include/c++/15.2.0/cmath"
+  61              		.file 8 "/usr/arm-none-eabi/include/c++/15.2.0/concepts"
+  62              		.file 9 "/usr/arm-none-eabi/include/c++/15.2.0/bits/iterator_concepts.h"
+  63              		.file 10 "/usr/arm-none-eabi/include/c++/15.2.0/bits/utility.h"
+ARM GAS  /tmp/ccZs04EX.s 			page 2
+
+
+  64              		.file 11 "/usr/arm-none-eabi/include/c++/15.2.0/compare"
+  65              		.file 12 "/usr/arm-none-eabi/include/c++/15.2.0/debug/debug.h"
+  66              		.file 13 "/usr/arm-none-eabi/include/c++/15.2.0/bits/std_abs.h"
+  67              		.file 14 "/usr/arm-none-eabi/include/c++/15.2.0/numbers"
+  68              		.file 15 "/usr/arm-none-eabi/include/c++/15.2.0/cstddef"
+  69              		.file 16 "/usr/arm-none-eabi/include/c++/15.2.0/cstdint"
+  70              		.file 17 "/usr/arm-none-eabi/include/c++/15.2.0/arm-none-eabi/thumb/v7e-m+dp/hard/bits/c++config.h
+  71              		.file 18 "/usr/arm-none-eabi/include/c++/15.2.0/bits/predefined_ops.h"
+  72              		.file 19 "/usr/arm-none-eabi/include/math.h"
+  73              		.file 20 "/usr/arm-none-eabi/include/c++/15.2.0/bits/ptr_traits.h"
+  74              		.file 21 "/usr/arm-none-eabi/include/c++/15.2.0/math.h"
+  75              		.file 22 "Dattorro/dsp/delays/InterpDelay.hpp"
+  76              		.file 23 "/usr/arm-none-eabi/include/c++/15.2.0/bits/memory_resource.h"
+ARM GAS  /tmp/ccZs04EX.s 			page 3
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 InterpDelay.cpp
+     /tmp/ccZs04EX.s:24     .data.hold:00000000 hold
+     /tmp/ccZs04EX.s:21     .data.hold:00000000 $d
+     /tmp/ccZs04EX.s:31     .data.clearPopCancelValue:00000000 clearPopCancelValue
+     /tmp/ccZs04EX.s:28     .data.clearPopCancelValue:00000000 $d
+     /tmp/ccZs04EX.s:37     .bss.triggerClear:00000000 triggerClear
+     /tmp/ccZs04EX.s:38     .bss.triggerClear:00000000 $d
+     /tmp/ccZs04EX.s:44     .bss.count:00000000 count
+     /tmp/ccZs04EX.s:41     .bss.count:00000000 $d
+     /tmp/ccZs04EX.s:51     .bss.sdramData:00000000 sdramData
+     /tmp/ccZs04EX.s:48     .bss.sdramData:00000000 $d
+
+NO UNDEFINED SYMBOLS
