@@ -125,7 +125,7 @@ void setup()
 #endif
 
 #if UtilEffet
-#if 0
+#if 0  //pour les tests manuels
   for (int i = 0; i < 6; i++){
     OctaverObj[i].setEnabled(true);
     OctaverObj[i].setMix(0.7f);
