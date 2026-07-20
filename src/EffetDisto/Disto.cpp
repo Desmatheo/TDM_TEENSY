@@ -153,7 +153,7 @@ void DistoEffect::normalizeVolume(float &sample, int clippingType) {
         sample *= 1.0f;
         break;
     case 1: // Soft Clipping
-        sample *= 1.0f;
+        sample *= 0.05f;
         break;
     case 2: // Fuzz
         sample *= 1.0f;
@@ -287,26 +287,29 @@ void DistoEffect::setIntensity(float val) {
 void DistoEffect::setParameter(int param_id, float value) {
     switch (param_id){
         case 0 : 
+            // Mix supprimé (toujours 100% wet)
+            break;
+        case 1 : 
             setGain(value);
             break;
-        case 1 :  
-            if (value >= 0.82f) setDistoMode(0);
-            else if ((0.82f > value) && (value > 0.66f)) setDistoMode(1);
-            else if ((0.66f > value) && (value > 0.49f)) setDistoMode(2);
-            else if ((0.49f > value) && (value > 0.33f)) setDistoMode(3);
-            else if ((0.33f > value) && (value > 0.16f)) setDistoMode(4);
-            else setDistoMode(5);
+        case 2 :  
+            if (value >= 0.897f) setDistoMode(5);      // Autour de MIDI 127
+            else if (value >= 0.696f) setDistoMode(4); // Autour de MIDI 101
+            else if (value >= 0.496f) setDistoMode(3); // Autour de MIDI 76
+            else if (value >= 0.295f) setDistoMode(2); // Autour de MIDI 50
+            else if (value >= 0.098f) setDistoMode(1); // Autour de MIDI 25
+            else setDistoMode(0);                      // Autour de MIDI 0
             break; 
-        case 2 : 
+        case 3 : 
             setTone(value);
             break;
-        case 3 : 
+        case 4 : 
             setIntensity(value);
             break;
-        case 4 : 
+        case 5 : 
             setOversamp(value);
             break;
-        case 5 : 
+        case 6 : 
             setVolume(value);
             break;
         default:

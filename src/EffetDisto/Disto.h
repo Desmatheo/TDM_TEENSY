@@ -22,6 +22,8 @@ class DistoEffect : public AudioStream {
     float samplerate;
 
     float volume = 1;
+    float dryMix = 0.5f;
+    float wetMix = 0.5f;
 
     float gain;
     float min_gain = 1.0f;
@@ -45,12 +47,12 @@ class DistoEffect : public AudioStream {
 
     virtual void update() override;
 
-    void setGain(float gain);               // param_id 0
-    void setDistoMode(int mode);            // param_id 1
-    void setTone(float tone);               // param_id 2
-    void setIntensity(float intensity);     // param_id 3
-    void setOversamp(bool oversamp);        // param_id 4
-    void setVolume(float vol);              // param_id 5
+    void setGain(float gain);               // param_id 1
+    void setDistoMode(int mode);            // param_id 2
+    void setTone(float tone);               // param_id 3
+    void setIntensity(float intensity);     // param_id 4
+    void setOversamp(bool oversamp);        // param_id 5
+    void setVolume(float vol);              // param_id 6
     
     void InitializeFilters();
 

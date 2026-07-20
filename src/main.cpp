@@ -154,7 +154,6 @@ void setup()
     DelaysObj[i].setVolume(1.0f);
 
     DistosObj[i].setDistoMode(1);
-    DistosObj[i].setMix(1.0f);
     DistosObj[i].setVolume(0.01f);
          
     TremolosObj[i].setMix(1.0f);           
