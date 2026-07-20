@@ -20,7 +20,6 @@ DistoEffect::DistoEffect(float sampleRate)
 
     samplerate = sampleRate;
 
-    setMix(1.0f);
     setDistoMode(1);
     setTone(0.5f);
     setVolume(1.0f);
@@ -93,12 +92,12 @@ std::vector<float> DistoEffect::upsample(const std::vector<float> &input, int fa
     std::vector<float> output(input.size() * factor, 0.0f);
 
     for (size_t i = 0; i < input.size(); ++i) {
-        // Insert input samples, leaving zeros in between
-        output[i * factor] = input[i];
+        // Insert input samples, leaving zeros in between. Scale by factor to preserve energy after lowpass.
+        output[i * factor] = input[i] * factor;
     }
 
     // Apply the low-pass filter to smooth interpolated samples
-    for (size_t i = 1; i < output.size(); ++i) {
+    for (size_t i = 0; i < output.size(); ++i) {
         output[i] = upsamplingLowpassFilter(output[i]);
     }
 
@@ -122,22 +121,28 @@ void DistoEffect::processDistortion(float &sample,           // Sample to proces
 
     switch (clippingType) {
     case 0: // Hard Clipping
-        sample = hardClipping(sample, 1.0f - intensityVal);
+        {
+            float threshold = 1.0f - intensityVal * 0.9f;
+            sample = hardClipping(sample, threshold) / threshold;
+        }
         break;
     case 1: // Soft Clipping
-        sample = softClipping(sample, gainVal);
+        sample = softClipping(sample, 1.0f);
         break;
     case 2: // Fuzz
-        sample = fuzzEffect(sample, intensityVal * 10.0f);
+        sample = fuzzEffect(sample, 1.0f + intensityVal * 9.0f);
         break;
     case 3: // Tube Saturation
-        sample = tubeSaturation(sample, intensityVal * 10.0f);
+        sample = tubeSaturation(sample, 1.0f + intensityVal * 9.0f);
         break;
     case 4: // Multi-stage
-        sample = multiStage(sample, gainVal, intensityVal);
+        sample = multiStage(sample, 1.0f, 1.0f + intensityVal * 9.0f);
         break;
     case 5: // Diode Clipping
-        sample = diodeClipping(sample, 1.0f - intensityVal);
+        {
+            float threshold = 1.0f - intensityVal * 0.9f;
+            sample = diodeClipping(sample, threshold) / threshold;
+        }
         break;
     }
 }
@@ -145,22 +150,22 @@ void DistoEffect::processDistortion(float &sample,           // Sample to proces
 void DistoEffect::normalizeVolume(float &sample, int clippingType) {
     switch (clippingType) {
     case 0: // Hard Clipping
-        sample *= 1.8f;
+        sample *= 1.0f;
         break;
     case 1: // Soft Clipping
-        sample *= 0.8f;
+        sample *= 1.0f;
         break;
     case 2: // Fuzz
         sample *= 1.0f;
         break;
     case 3: // Tube Saturation
-        sample *= 0.9f;
+        sample *= 1.0f;
         break;
     case 4: // Multi-stage
-        sample *= 0.5f;
+        sample *= 1.0f;
         break;
     case 5: // Diode Clipping
-        sample *= 1.8f;
+        sample *= 1.0f;
         break;
     }
 }
@@ -173,7 +178,7 @@ float DistoEffect::ProcessTiltToneControl(float input) {
     const float hp = input - lp;
 
     // Crossfade: toneAmount=0 => all LP (more bass), toneAmount=1 => all HP (more treble)
-    return lp * (1.f - toneFreq) + hp * toneFreq;
+    return lp * (1.f - toneAmount) + hp * toneAmount;
 }
 
 void DistoEffect::update() {
@@ -224,9 +229,6 @@ void DistoEffect::update() {
             // Downsample back to original sample rate
             const std::vector<float> downsampledOutput = downsample(oversampledInput, overFactor);
             distorted = downsampledOutput[0];
-
-            // Apply gain compensation for oversampling
-            distorted *= overFactor;
         } else {
             processDistortion(distorted, computed_gain, effect_mode, intensity);
 
@@ -240,8 +242,8 @@ void DistoEffect::update() {
         // Apply tilt-tone filter
         const float effect_output = ProcessTiltToneControl(distorted);
 
-        // Mixage final dry/wet pour cet effet de corde
-        float output = (inputL * dryMix + effect_output * wetMix) * volume;
+        // Pas de mixage dry/wet, signal 100% effet
+        float output = effect_output * volume;
 
         if (output > 1.0f) output = 1.0f;
         if (output < -1.0f) output = -1.0f;
@@ -255,18 +257,14 @@ void DistoEffect::update() {
 
 // --- Implémentation des Setters Spécifiques ---
 
-void DistoEffect::setMix(float mix) {
-    wetMix = clampf(mix, 0.0f, 1.0f);
-    dryMix = 1.0f - mix;
-}
-
 void DistoEffect::setGain(float val) {
     gain = clampf(val, 0.0f, 10.0f);
 }
 
 void DistoEffect::setTone(float freq) {
     // freq = freq * 1500.0f;
-    toneFreq = 500.0f + clampf(freq, 0.0f, 1.0f) * 1500.0f ;
+    toneAmount = clampf(freq, 0.0f, 1.0f);
+    toneFreq = 500.0f + toneAmount * 1500.0f ;
     tone.SetFreq(toneFreq);
 }
 
@@ -289,12 +287,9 @@ void DistoEffect::setIntensity(float val) {
 void DistoEffect::setParameter(int param_id, float value) {
     switch (param_id){
         case 0 : 
-            setMix(value);
-            break;
-        case 1 : 
             setGain(value);
             break;
-        case 2 :  
+        case 1 :  
             if (value >= 0.82f) setDistoMode(0);
             else if ((0.82f > value) && (value > 0.66f)) setDistoMode(1);
             else if ((0.66f > value) && (value > 0.49f)) setDistoMode(2);
@@ -302,16 +297,16 @@ void DistoEffect::setParameter(int param_id, float value) {
             else if ((0.33f > value) && (value > 0.16f)) setDistoMode(4);
             else setDistoMode(5);
             break; 
-        case 3 : 
+        case 2 : 
             setTone(value);
             break;
-        case 4 : 
+        case 3 : 
             setIntensity(value);
             break;
-        case 5 : 
+        case 4 : 
             setOversamp(value);
             break;
-        case 6 : 
+        case 5 : 
             setVolume(value);
             break;
         default:
