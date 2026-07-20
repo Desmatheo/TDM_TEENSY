@@ -3,31 +3,19 @@ Le setup est le suivant : Guitare => Codec externe => Teensy 	=> USBOut
 								=> Codec externe => sortie analogique
 Tous les enregistrements Audacity seront tirés de l'USBOut. Le préampli est désactivé (trop bruyant), l'amplification sera numérique (cf effet Bypass). Sauf quand c'est précisé, mais le mix sera a 100%.
 
-Tests octave down 1 : 
-- utilisation CPU : 18.5%
+Tests octave up : 
+- utilisation CPU : 11.5%
+
+Pas grand chose a dire, juste que l'algorithme fait 2 calculs inutiles : 
+
+        _up1 = (a*a - b*b) * fastInvSqrt(a*a + b*b);
+        
+Il fait 2 fois le meme calcul de carré, ce qui peut se changer simplement par : 
+
+        const auto a_carre = a*a;
+        const auto b_carre = b*b;
+        _up1 = (a_carre - b_carre) * fastInvSqrt(a_carre + b_carre);
+
+Etant donné que l'algorithme pour augmenter est moins gourmand, on ne va toucher a rien, laisser a 80 bandes etc.. c'est parfait, avec le petit changement on est a 10.5% du CPU environs. 
 
 
-Niveau programme. Le probleme de base est que sans modification, l'algorythme est trop gourmant (~20%). Le tableau de bandshift allait jusqu'a 80 bandes, ce qui est bien, mais demande trop de calcul. 
-De plus, etant donné que nous baissons d'une octave, nous divisons la fréquence jouée par 2, et donc l'interet de vouloir avoir des bandes de fréquence au dessus d'une certaine frequence se perd completement. 
-
-L'algorithme de base faisait des bandes qui allaient de 60Hz à 1685 Hz (480 * 2^(0.027 * n) - 420, n etant l'index de la bande). 
-
-Cependant, nous faisons du downsapling pour pouvoir alléger une première fois le cpu.
-Ce downsampling etant de facteur 6, on vient donc passer d'une fréquence d'échantillonage de 44.1kHz à 7.35kHz, ce qui nous fait une fréquence de Nyquist à 3,675kHz. 
-
-Autre point, apres avoir observer les spectrogrammes de la note la plus grave et la plus aigue que l'on peut faire sur une guitare accordage E standard avec l'octave down a fond, et les 80 bandes (cf img_spec_Down_UpAndDown.png, .aug3 et wav), on n'utilise pas toute la bande de fréquence. Une solution autre que toucher au downsampling serait donc d'utiliser moins de 80 bandes. 
-À 40 bandes, le son est toujours plutot bon, et la consomation chute à 10.5%, et comme on peut le voir egalement sur le spectrograme img_spec_Down_UpAndDown, le spectre ne change pas trop car la majorité est en basse fréquence. 
-On note tout de meme une suppréssion des fréquences au dela de 400Hz, ce qui est "logique" étant donné que nous avons réduit de moitié le traitement des bandes 
-	=> bande max : n = 40 => 480 * 2^(0.027 * 40) - 420 = 594Hz (presque cohérent)
-Cependant, pour la note la plus aigue, on voit une absence quasi totale du son. 
-
-Solution choisie : 
- - réduire le nombre de bande 
-toucher au coefficient de downsamling pourrait avoir plus de répercussion que simplement pas traiter certaines bandes. c'est pourquoi il est préférable de ne pas y toucher. 
-Les pertes observés dans les hautes fréquences pourraient etre récupérés par l'ajustement d'un mix, pour récuperer les fréquences du signal d'origine, tout en gardant la fondamentale du signal traité. 
-
-Apres avoir testé plusieurs mix, on choisira comme mix 70%, c'est celui qui permet de garder le plus de haute fréquence. Les tests sont sur rec_spec_Down_pour_cent_agé.aup3, et .png.
-Cependant, 70% et 40 bandes pas trop suffisant pour les notes aigue (mais qui joue ces notes avec un octave down, juste met pas d'octaver, soit normal.)
-
-
-Pour l'octave down 2, on va prendre le meme schéma, 40 bandes, 70%, et on va passer de 25% de CPU à 14%, c'est magique, c'est magnifique, et voila tout :) c'est top nan ? 
