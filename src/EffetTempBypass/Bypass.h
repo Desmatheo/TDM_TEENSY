@@ -31,8 +31,8 @@ public:
             float inputL = inL ? ((float)inL->data[i] / 32768.0f) : 0.0f;
             float inputR = inR ? ((float)inR->data[i] / 32768.0f) : inputL; 
 
-            float outputL = (inputL * 3.0f);
-            float outputR = (inputR * 3.0f);
+            float outputL = (inputL * 5.0f);
+            float outputR = (inputR * 5.0f);
 
             // retour en entier
             outL->data[i] = (int16_t)(outputL * 32767.0f);

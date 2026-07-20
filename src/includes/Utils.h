@@ -11,6 +11,8 @@
 #if Usb
 #define SerialUSB 1
 
+#define USE_MIDI_USB 1
+
 #define USBIn 0
 #define USBOut 1
 #endif

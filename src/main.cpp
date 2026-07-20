@@ -1,6 +1,7 @@
 #include <Audio.h>
 #include <Wire.h>
 #include "includes/main.h"
+#include "includes/midi_processing.h"
 
 #if UtilEffet
 DelayEffect              DelaysObj[6];
@@ -124,7 +125,7 @@ void setup()
 #endif
 
 #if UtilEffet
-#if 1
+#if 0
   for (int i = 0; i < 6; i++){
     OctaverObj[i].setEnabled(true);
     OctaverObj[i].setMix(0.7f);
@@ -146,6 +147,12 @@ void setup()
 #endif
 #endif
 
+#if USE_MIDI_USB
+  usbMIDI.setHandleControlChange(OnControlChange);
+#endif
+
+  pinMode(LED_BUILTIN, OUTPUT);
+
 #if !SerialUSB
     Serial.end();
 #endif
@@ -153,25 +160,41 @@ void setup()
 
 void loop()
 {
+#if USE_MIDI_USB
+  usbMIDI.read();
+#endif
+
+  unsigned long tempsActuel = millis();
+  static unsigned long lastCpuMeter = 0;
+  
+  if (tempsActuel - lastCpuMeter >= 500) { 
+    lastCpuMeter = tempsActuel;
+    
+    float avgLoad = AudioProcessorUsage();
+    float maxLoad = AudioProcessorUsageMax();
+
+    // Alerte Surcharge CPU sur la LED intégrée de la Teensy (LED_BUILTIN)
+    if (maxLoad > 90.0f) {
+      digitalWrite(LED_BUILTIN, HIGH);
+    } else {
+      digitalWrite(LED_BUILTIN, LOW);
+    }
+
+#if USE_MIDI_USB
+    // Envoi de la charge CPU moyenne (CC 80) et max (CC 81) sur le canal 1
+    usbMIDI.sendControlChange(80, (uint8_t)clampf(avgLoad, 0.0f, 127.0f), 1);
+    usbMIDI.sendControlChange(81, (uint8_t)clampf(maxLoad, 0.0f, 127.0f), 1);
+#endif
 
 #if SerialUSB
-  unsigned long tempsActuel = millis();
-  static unsigned long lastHeartbeat = 0;
-  bool led = false;
-  
-  if (tempsActuel - lastHeartbeat >= 500) { 
-    led = !led;
-    lastHeartbeat = tempsActuel;
-    
-    
-    // Affichage Charge CPU
+    // Affichage Charge CPU dans le moniteur série
     Serial.print("Charge CPU Audio Actuelle : ");
-    Serial.print(AudioProcessorUsage());
+    Serial.print(avgLoad);
     Serial.println(" %");
 
     Serial.print("Charge CPU Audio Max : ");
-    Serial.print(AudioProcessorUsageMax());
+    Serial.print(maxLoad);
     Serial.println(" %");
-  }
 #endif
+  }
 }
