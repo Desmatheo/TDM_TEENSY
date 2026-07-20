@@ -34,6 +34,18 @@ public:
             float outputL = (inputL * 10.0f);
             float outputR = (inputR * 10.0f);
 
+            // float treshold = 0.003f;
+            // float rate = 0.5f;
+
+            // if (inputL < treshold && inputL > -treshold){
+            //     outputL = (inputL * 10.0f) * rate;
+            //     outputR = (inputR * 10.0f) * rate;
+            // }
+            // else{
+            //     outputL = (inputL * 10.0f);
+            //     outputR = (inputR * 10.0f);
+            // }
+
             // retour en entier
             outL->data[i] = (int16_t)(outputL * 32767.0f);
             outR->data[i] = (int16_t)(outputR * 32767.0f);
