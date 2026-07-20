@@ -4,6 +4,7 @@
 #include "../EffetOctaver/Octaver.h"
 #include "../EffetDelay/Delay.h"
 #include "../EffetDisto/Disto.h"
+#include "../EffetTremolo/Tremolo.h"
 #include "Utils.h"
 
 #if Osc || OscCodec
@@ -32,4 +33,5 @@ AudioOutputUSB           usbOut;           // Sortie audio de la teensy
 extern OctaverEffect            OctaverObj[6];
 extern DelayEffect              DelaysObj[6];
 extern DistoEffect              DistosObj[6];
+extern TremoloEffect            TremolosObj[6];
 extern BypassEffect             BypassObj[6];

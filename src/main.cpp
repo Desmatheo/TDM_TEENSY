@@ -7,6 +7,7 @@
 DelayEffect              DelaysObj[6];
 OctaverEffect            OctaverObj[6];
 DistoEffect              DistosObj[6];
+TremoloEffect            TremolosObj[6]; 
 #endif
 BypassEffect             BypassObj[6];
 
@@ -53,19 +54,26 @@ AudioConnection c15(DistosObj[3], 0, OctaverObj[3], 0);
 AudioConnection c16(DistosObj[4], 0, OctaverObj[4], 0);
 AudioConnection c17(DistosObj[5], 0, OctaverObj[5], 0);
 
-AudioConnection c18(OctaverObj[0], 0, DelaysObj[0], 0);
-AudioConnection c19(OctaverObj[1], 0, DelaysObj[1], 0);
-AudioConnection c20(OctaverObj[2], 0, DelaysObj[2], 0);
-AudioConnection c21(OctaverObj[3], 0, DelaysObj[3], 0);
-AudioConnection c22(OctaverObj[4], 0, DelaysObj[4], 0);
-AudioConnection c23(OctaverObj[5], 0, DelaysObj[5], 0);
+AudioConnection c18(OctaverObj[0], 0, TremolosObj[0], 0);           
+AudioConnection c19(OctaverObj[1], 0, TremolosObj[1], 0);           
+AudioConnection c20(OctaverObj[2], 0, TremolosObj[2], 0);           
+AudioConnection c21(OctaverObj[3], 0, TremolosObj[3], 0);           
+AudioConnection c22(OctaverObj[4], 0, TremolosObj[4], 0);           
+AudioConnection c23(OctaverObj[5], 0, TremolosObj[5], 0);           
+ 
+AudioConnection c24(TremolosObj[0], 0, DelaysObj[0], 0);           
+AudioConnection c25(TremolosObj[1], 0, DelaysObj[1], 0);           
+AudioConnection c26(TremolosObj[2], 0, DelaysObj[2], 0);           
+AudioConnection c27(TremolosObj[3], 0, DelaysObj[3], 0);           
+AudioConnection c28(TremolosObj[4], 0, DelaysObj[4], 0);           
+AudioConnection c29(TremolosObj[5], 0, DelaysObj[5], 0);           
 
-AudioConnection c24(DelaysObj[0], 0, mixer_1a4,  0);
-AudioConnection c25(DelaysObj[1], 0, mixer_1a4,  1);
-AudioConnection c26(DelaysObj[2], 0, mixer_1a4,  2);
-AudioConnection c27(DelaysObj[3], 0, mixer_1a4,  3);
-AudioConnection c28(DelaysObj[4], 0, mixer_5et6, 0);
-AudioConnection c29(DelaysObj[5], 0, mixer_5et6, 1);
+AudioConnection c30(DelaysObj[0], 0, mixer_1a4,  0);
+AudioConnection c31(DelaysObj[1], 0, mixer_1a4,  1);
+AudioConnection c32(DelaysObj[2], 0, mixer_1a4,  2);
+AudioConnection c33(DelaysObj[3], 0, mixer_1a4,  3);
+AudioConnection c34(DelaysObj[4], 0, mixer_5et6, 0);
+AudioConnection c35(DelaysObj[5], 0, mixer_5et6, 1);
 #else
 AudioConnection  c6(BypassObj[0],  0, mixer_1a4,  0);
 AudioConnection  c7(BypassObj[1],  0, mixer_1a4,  1);
@@ -125,26 +133,36 @@ void setup()
 #endif
 
 #if UtilEffet
-#if 0  //pour les tests manuels
+#define TestMano 0
   for (int i = 0; i < 6; i++){
+    
+#if TestMano 
     OctaverObj[i].setEnabled(true);
+    DelaysObj[i].setEnabled(false);
+    DistosObj[i].setEnabled(false);
+    TremolosObj[i].setEnabled(false);  
+#endif
+
     OctaverObj[i].setMix(0.7f);
     OctaverObj[i].setVolume(1.0f);
     OctaverObj[i].setOctaveMode(1);
 
     DelaysObj[i].begin();
-    DelaysObj[i].setEnabled(false);
     DelaysObj[i].setMix(1.0f);
     DelaysObj[i].setFeedback(0.8f);   
     DelaysObj[i].setDelayTime(1.0f);
     DelaysObj[i].setVolume(1.0f);
 
-    DistosObj[i].setEnabled(false);
     DistosObj[i].setDistoMode(1);
     DistosObj[i].setMix(1.0f);
     DistosObj[i].setVolume(0.01f);
+         
+    TremolosObj[i].setMix(1.0f);           
+    TremolosObj[i].setDepth(0.5f);           
+    TremolosObj[i].setRate(5.0f);           
+    TremolosObj[i].setWaveform(0);           
+    TremolosObj[i].setVolume(1.0f);           
   }
-#endif
 #endif
 
 #if USE_MIDI_USB
