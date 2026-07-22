@@ -11,7 +11,9 @@ Guitare ──► Codec externe ──► Teensy ──┬──► USB Out (enr
 
 > [!NOTE]
 > Le préampli est désactivé (trop bruyant). L'amplification est réalisée en numérique via l'effet Bypass.  
-> Sauf mention contraire, le **mix est à 100%**.
+> **Sauf mention contraire**, le **mix est à 100%**.
+> Les pourcentages d'utilisation seront pour l'utilisation de l'effet pour **1 corde**
+> **Tout est réalisé sur TEENSY, pas DAISY ATTENTION**
 
 ---
 
@@ -55,9 +57,14 @@ Les carrés sont mis en cache dans des variables locales, éliminant les calculs
 
 > [!TIP]
 > Étant donné que l'algorithme pour l'octave up est déjà moins gourmand que les modes down, il n'est **pas nécessaire de réduire le nombre de bandes**. On conserve 80 bandes pour une qualité optimale.
+> Cependant, si il y a besoin d'economiser toujours plus de ressources, nous pourront toucher aux bandes
 
-<!-- TODO: Ajouter un spectrogramme de l'octave up -->
-<!-- TODO: Ajouter un enregistrement audio WAV -->
+### Observation du spectrogramme
+
+![Spectrogramme Octave Up (80 bandes)](img/03_Up/img_spec_Up.png)
+🔊 Enregistrement : [rec_spec_Up.wav](rec/Up/rec_spec_Up.wav)
+
+**Constat** : Contrairement à l'octave inférieure, la génération de l'octave supérieure tire le spectre vers le haut. L'effet crée un contenu harmonique riche et brillant, ce qui justifie d'autant plus le choix de conserver les 80 bandes : une réduction couperait prématurément ces hautes fréquences caractéristiques de l'octave up.
 
 ---
 

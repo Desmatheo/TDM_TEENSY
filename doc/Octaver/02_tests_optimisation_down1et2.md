@@ -13,6 +13,7 @@ Guitare ──► Codec externe ──► Teensy ──┬──► USB Out (enr
 > Le préampli est désactivé (trop bruyant). L'amplification est réalisée en numérique via l'effet Bypass.  
 > **Sauf mention contraire**, le **mix est à 100%**.
 > Les pourcentages d'utilisation seront pour l'utilisation de l'effet pour **1 corde**
+> **Tout est réalisé sur TEENSY, pas DAISY ATTENTION**
 
 ---
 
