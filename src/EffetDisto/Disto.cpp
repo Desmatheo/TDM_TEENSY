@@ -119,7 +119,7 @@ float DistoEffect::testOverDrive(float input){
 }
 
 float DistoEffect::testFuzz(float input, float gainVal){
-    
+
 }
 
 float DistoEffect::dynamicPreFilterCutoff(float inputEnergy) {
@@ -174,16 +174,16 @@ void DistoEffect::processDistortion(float &sample,           // Sample to proces
         sample = fuzzEffect(sample, 1.0f + intensityVal * 9.0f);
         break;
     case 3: // Tube Saturation
-        // sample = tubeSaturation(sample, 1.0f + intensityVal * 9.0f);
-        sample = testDistortion(sample, gainVal);
+        sample = tubeSaturation(sample, 1.0f + intensityVal * 9.0f);
         break;
     case 4: // Multi-stage
         // sample = multiStage(sample, 1.0f, 1.0f + intensityVal * 9.0f);
+        sample = testDistortion(sample, gainVal);
         break;
     case 5: // Diode Clipping
         {
-            // float threshold = 1.0f - intensityVal * 0.9f;
-            // sample = diodeClipping(sample, threshold) / threshold;
+            float threshold = 1.0f - intensityVal * 0.9f;
+            sample = diodeClipping(sample, threshold) / threshold;
         }
         break;
     }
@@ -195,7 +195,7 @@ void DistoEffect::normalizeVolume(float &sample, int clippingType) {
         sample *= 1.0f;
         break;
     case 1: // Soft Clipping
-        sample *= 0.05f;
+        sample *= 1.0f;
         break;
     case 2: // Fuzz
         sample *= 1.0f;

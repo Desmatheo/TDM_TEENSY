@@ -142,6 +142,7 @@ void setup()
     DistosObj[i].setEnabled(false);
     TremolosObj[i].setEnabled(false);  
 #endif
+    BypassObj[i].setStringIndex(i);
 
     OctaverObj[i].setMix(0.7f);
     OctaverObj[i].setVolume(1.0f);
@@ -183,6 +184,13 @@ void loop()
 
   unsigned long tempsActuel = millis();
   static unsigned long lastCpuMeter = 0;
+
+#if PeakAnalysage
+  // Buffer circulaire pour le peak des 5 dernières secondes (10 × 500ms)
+  static constexpr int PEAK_BUFFER_SIZE = 10;
+  static float peakBuffer[6][PEAK_BUFFER_SIZE] = {};
+  static int peakIndex = 0;
+#endif
   
   if (tempsActuel - lastCpuMeter >= 500) { 
     lastCpuMeter = tempsActuel;
@@ -203,6 +211,22 @@ void loop()
     usbMIDI.sendControlChange(81, (uint8_t)clampf(maxLoad, 0.0f, 127.0f), 1);
 #endif
 
+#if PeakAnalysage
+    // Stocker le volume actuel dans le buffer et calculer le peak
+    float peakValues[6];
+    for (int i = 0; i < 6; i++) {
+      peakBuffer[i][peakIndex] = BypassObj[i].getVolume();
+
+      // Trouver le max sur les 5 dernières secondes
+      float maxVol = 0.0f;
+      for (int j = 0; j < PEAK_BUFFER_SIZE; j++) {
+        if (peakBuffer[i][j] > maxVol) maxVol = peakBuffer[i][j];
+      }
+      peakValues[i] = maxVol;
+    }
+    peakIndex = (peakIndex + 1) % PEAK_BUFFER_SIZE;
+#endif
+
 #if SerialUSB
     // Affichage Charge CPU dans le moniteur série
     Serial.print("Charge CPU Audio Actuelle : ");
@@ -212,6 +236,24 @@ void loop()
     Serial.print("Charge CPU Audio Max : ");
     Serial.print(maxLoad);
     Serial.println(" %");
+
+#if PeakAnalysage
+    // Volume RMS brut de chaque corde (float 0.0 à 1.0)
+    Serial.print("VOL:");
+    for (int i = 0; i < 6; i++) {
+      Serial.print(BypassObj[i].getVolume(), 4);
+      if (i < 5) Serial.print(',');
+    }
+    Serial.println();
+
+    // Peak des 5 dernières secondes
+    Serial.print("PEAK:");
+    for (int i = 0; i < 6; i++) {
+      Serial.print(peakValues[i], 4);
+      if (i < 5) Serial.print(',');
+    }
+    Serial.println();
+#endif
 #endif
   }
 }
