@@ -83,6 +83,45 @@ float DistoEffect::multiStage(float sample, float drive, float intensityVal) {
     return result;
 }
 
+float DistoEffect::testDistortion(float input, float gainVal){
+    float g = input * gainVal;
+    
+#define Qlib 1
+
+#if Qlib
+#if 1
+    float z = ((g < std::signbit(g))? (-1.0f) : 1.0f) * (1.0f - fastexp(-std::abs(g))); 
+#else 
+    float z = ((g < std::signbit(g))? (-1.0f) : 1.0f) * (1.0f - fasterexp(-std::abs(g))); 
+#endif
+#else
+    float z = ((g < std::signbit(g))? (-1.0f) : 1.0f) * (1.0f - std::exp(-std::abs(g))); 
+#endif
+    return z; 
+}
+
+float DistoEffect::testOverDrive(float input){
+    float g = input;
+    float threshold = intensity;
+
+    if(std::abs(input) < threshold){
+        return 2 * input;
+    }
+    else if (std::abs(input) > 2 * threshold){
+        return 1.0f;
+    }
+    else if (std::abs(input) > threshold){
+        // tmp pour pas faire 2 fois le meme calcul :)
+        // par rapport au livre, j'ai tout fait en une ligne, et - pour eviter le abs (qui peut faire 2 3 coups de clock inutiles en plus)
+        float tmp = 2.0f - ((input > 0) ? input : std::abs(input)) * 3.0f;
+        return ((3.0f - tmp * tmp) / 3);      
+    }
+}
+
+float DistoEffect::testFuzz(float input, float gainVal){
+    
+}
+
 float DistoEffect::dynamicPreFilterCutoff(float inputEnergy) {
     return preFilterCutoffBase + (preFilterCutoffMax - preFilterCutoffBase) * std::tanh(inputEnergy);
 }
@@ -117,31 +156,34 @@ void DistoEffect::processDistortion(float &sample,           // Sample to proces
                                     const int &clippingType, // Clipping type
                                     const float &intensityVal)  // Intensity
 {
-    sample *= gainVal;
 
     switch (clippingType) {
     case 0: // Hard Clipping
         {
+            sample *= gainVal;
             float threshold = 1.0f - intensityVal * 0.9f;
             sample = hardClipping(sample, threshold) / threshold;
         }
         break;
     case 1: // Soft Clipping
+        sample *= gainVal;
         sample = softClipping(sample, 1.0f);
         break;
-    case 2: // Fuzz
+    case 2: // Fuzz        
+        sample *= gainVal;
         sample = fuzzEffect(sample, 1.0f + intensityVal * 9.0f);
         break;
     case 3: // Tube Saturation
-        sample = tubeSaturation(sample, 1.0f + intensityVal * 9.0f);
+        // sample = tubeSaturation(sample, 1.0f + intensityVal * 9.0f);
+        sample = testDistortion(sample, gainVal);
         break;
     case 4: // Multi-stage
-        sample = multiStage(sample, 1.0f, 1.0f + intensityVal * 9.0f);
+        // sample = multiStage(sample, 1.0f, 1.0f + intensityVal * 9.0f);
         break;
     case 5: // Diode Clipping
         {
-            float threshold = 1.0f - intensityVal * 0.9f;
-            sample = diodeClipping(sample, threshold) / threshold;
+            // float threshold = 1.0f - intensityVal * 0.9f;
+            // sample = diodeClipping(sample, threshold) / threshold;
         }
         break;
     }

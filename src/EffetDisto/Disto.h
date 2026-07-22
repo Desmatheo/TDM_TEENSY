@@ -75,6 +75,11 @@ private:
     float fuzzEffect(float input, float intensityVal);
     float tubeSaturation(float input, float gainVal);
     float multiStage(float sample, float drive, float intensityVal);
+
+    float testDistortion(float input, float gainVal);
+    float testOverDrive(float input);
+    float testFuzz(float input, float gainVal);
+
     float dynamicPreFilterCutoff(float inputEnergy);
     
     std::vector<float> upsample(const std::vector<float> &input, int factor, float sample_rate);
