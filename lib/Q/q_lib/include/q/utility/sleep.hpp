@@ -1,0 +1,25 @@
+/*=============================================================================
+   Copyright (c) 2014-2026 Joel de Guzman. All rights reserved.
+
+   Distributed under the Boost Software License, Version 1.0.
+   [ https://www.boost.org/LICENSE_1_0.txt ]
+=============================================================================*/
+#if !defined(CYCFI_Q_SLEEP_FEBRUARY_21_2018)
+#define CYCFI_Q_SLEEP_FEBRUARY_21_2018
+
+#if !defined(Q_DONT_USE_THREADS)
+#include <chrono>
+#include <thread>
+#endif
+
+namespace cycfi::q
+{
+#if !defined(Q_DONT_USE_THREADS)
+   inline void sleep(duration t)
+   {
+      std::this_thread::sleep_for(std::chrono::duration<double>(as_double(t)));
+   }
+#endif
+}
+
+#endif

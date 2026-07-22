@@ -1,0 +1,18 @@
+/*=============================================================================
+   Copyright (c) 2014-2026 Joel de Guzman. All rights reserved.
+
+   Distributed under the Boost Software License, Version 1.0.
+   [ https://www.boost.org/LICENSE_1_0.txt ]
+=============================================================================*/
+#if !defined(CYCFI_Q_CONCEPTS_HPP_MAY_12_2023)
+#define CYCFI_Q_CONCEPTS_HPP_MAY_12_2023
+
+#include <concepts>
+
+namespace cycfi::q::concepts
+{
+   template <typename T>
+   concept Arithmetic = std::integral<T> || std::floating_point<T>;
+}
+
+#endif
