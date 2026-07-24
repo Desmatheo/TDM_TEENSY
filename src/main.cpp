@@ -133,12 +133,12 @@ void setup()
 #endif
 
 #if UtilEffet
-#define TestMano 0
+#define TestMano 1
   for (int i = 0; i < 6; i++){
     
 #if TestMano 
-    OctaverObj[i].setEnabled(true);
-    DelaysObj[i].setEnabled(false);
+    OctaverObj[i].setEnabled(false);
+    DelaysObj[i].setEnabled(true);
     DistosObj[i].setEnabled(false);
     TremolosObj[i].setEnabled(false);  
 #endif
@@ -149,19 +149,19 @@ void setup()
     OctaverObj[i].setOctaveMode(1);
 
     DelaysObj[i].begin();
-    DelaysObj[i].setMix(1.0f);
-    DelaysObj[i].setFeedback(0.8f);   
-    DelaysObj[i].setDelayTime(1.0f);
+    DelaysObj[i].setMix(0.5f);
+    DelaysObj[i].setFeedback(0.0f);
+    DelaysObj[i].setDelayTime(0.6f);
     DelaysObj[i].setVolume(1.0f);
 
     DistosObj[i].setDistoMode(1);
     DistosObj[i].setVolume(0.01f);
          
-    TremolosObj[i].setMix(1.0f);           
-    TremolosObj[i].setDepth(0.5f);           
-    TremolosObj[i].setRate(5.0f);           
-    TremolosObj[i].setWaveform(0);           
-    TremolosObj[i].setVolume(1.0f);           
+    TremolosObj[i].setMix(1.0f);
+    TremolosObj[i].setDepth(0.5f);
+    TremolosObj[i].setRate(5.0f);
+    TremolosObj[i].setWaveform(0);
+    TremolosObj[i].setVolume(1.0f);
   }
 #endif
 
@@ -211,7 +211,18 @@ void loop()
     usbMIDI.sendControlChange(81, (uint8_t)clampf(maxLoad, 0.0f, 127.0f), 1);
 #endif
 
+#if SerialUSB
+    // Affichage Charge CPU dans le moniteur série
+    Serial.print("Charge CPU Audio Actuelle : ");
+    Serial.print(avgLoad);
+    Serial.println(" %");
+
+    Serial.print("Charge CPU Audio Max : ");
+    Serial.print(maxLoad);
+    Serial.println(" %");
+
 #if PeakAnalysage
+    
     // Stocker le volume actuel dans le buffer et calculer le peak
     float peakValues[6];
     for (int i = 0; i < 6; i++) {
@@ -225,19 +236,8 @@ void loop()
       peakValues[i] = maxVol;
     }
     peakIndex = (peakIndex + 1) % PEAK_BUFFER_SIZE;
-#endif
 
-#if SerialUSB
-    // Affichage Charge CPU dans le moniteur série
-    Serial.print("Charge CPU Audio Actuelle : ");
-    Serial.print(avgLoad);
-    Serial.println(" %");
 
-    Serial.print("Charge CPU Audio Max : ");
-    Serial.print(maxLoad);
-    Serial.println(" %");
-
-#if PeakAnalysage
     // Volume RMS brut de chaque corde (float 0.0 à 1.0)
     Serial.print("VOL:");
     for (int i = 0; i < 6; i++) {
