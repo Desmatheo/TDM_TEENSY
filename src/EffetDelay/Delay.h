@@ -10,7 +10,7 @@
 class DelayEffect : public AudioStream{
 public:
 
-    static constexpr size_t MAX_DELAY = static_cast<size_t>(44100 * 4.0f);
+    static constexpr size_t MAX_DELAY = static_cast<size_t>(44100 * 2.0f);
 
     // Paramètres internes
     float dryMix = 0.5f;
@@ -20,7 +20,7 @@ public:
     float vdelayFDBK = 0.7f;
 
 
-    // Structure interne pour gérer proprement un canal de delay (gauche/droite)
+    // Structure interne pour gérer le buffer de delay
     struct DelayChannel {
         float* buffer = nullptr;
         uint32_t buf_len = 0;
@@ -45,8 +45,7 @@ public:
         float Process(float in);
     };
 
-    DelayChannel delayL;
-    DelayChannel delayR;  
+    DelayChannel delay;
 
     DelayEffect();
     ~DelayEffect();
@@ -69,5 +68,5 @@ public:
     void setParameter(int param_id, float value);
 private:
     bool active = false;
-    audio_block_t* inputQueueArray_[2];
+    audio_block_t* inputQueueArray_[1];
 };

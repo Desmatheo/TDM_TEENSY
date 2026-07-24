@@ -6,7 +6,6 @@ void DelayEffect::DelayChannel::Init(float sampleRate, uint32_t max_delay_sample
     buf_len = max_delay_samples;
     
     // Allocation en priorité sur la PSRAM (extmem_malloc)
-    // 4s * 2 (stéréo) * 6 cordes = ~8.4 Mo, impossible sur la RAM interne !
     buffer = (float*)extmem_malloc(buf_len * sizeof(float));
     if (buffer) {
         use_extmem = true;
@@ -111,77 +110,55 @@ float DelayEffect::DelayChannel::Process(float in) {
     return read;
 }
 
-DelayEffect::DelayEffect() : AudioStream(2, inputQueueArray_) {
+DelayEffect::DelayEffect() : AudioStream(1, inputQueueArray_) {
     setMix(0.5f);
     setDelayTime(0.5f);
     setFeedback(0.7f);
 }
 
 DelayEffect::~DelayEffect() {
-    delayL.Free();
-    delayR.Free();
+    delay.Free();
 }
 
 bool DelayEffect::begin() {
-    delayL.Free();
-    delayR.Free();
-    
-    delayL.Init(AUDIO_SAMPLE_RATE_EXACT, MAX_DELAY);
-    delayR.Init(AUDIO_SAMPLE_RATE_EXACT, MAX_DELAY);
-    
-    return (delayL.buffer != nullptr && delayR.buffer != nullptr);
+    delay.Free();
+    delay.Init(AUDIO_SAMPLE_RATE_EXACT, MAX_DELAY);
+    return (delay.buffer != nullptr);
 }
 
 void DelayEffect::update() {
-    audio_block_t* inL = receiveReadOnly(0);
-    audio_block_t* inR = receiveReadOnly(1);
-
-    if (!inL && !inR) return;
+    audio_block_t* in = receiveReadOnly(0);
+    if (!in) return;
     
-    if (!active || (!delayL.buffer && !delayR.buffer)) {
-        if (inL) { transmit(inL, 0); release(inL); }
-        if (inR) { transmit(inR, 1); release(inR); }
+    if (!active || !delay.buffer) {
+        transmit(in, 0);
+        release(in);
         return;
     }
 
-    audio_block_t* outL = allocate();
-    audio_block_t* outR = allocate();
-
-    if (!outL || !outR) {
-        if (outL) release(outL);
-        if (outR) release(outR);
-        if (inL) release(inL);
-        if (inR) release(inR);
+    audio_block_t* out = allocate();
+    if (!out) {
+        release(in);
         return;
     }
 
     for (int i = 0; i < AUDIO_BLOCK_SAMPLES; i++) {
-        float inputL = inL ? ((float)inL->data[i] / 32768.0f) : 0.0f;
-        float inputR = inR ? ((float)inR->data[i] / 32768.0f) : inputL; 
+        float input = (float)in->data[i] / 32768.0f;
 
-        float delay_outL = delayL.Process(inputL);
-        float delay_outR = delayR.Process(inputR);
+        float delay_out = delay.Process(input);
 
-        float outputL = ((inputL * dryMix) + (delay_outL * wetMix)) * volume;
-        float outputR = ((inputR * dryMix) + (delay_outR * wetMix)) * volume;
+        float output = ((input * dryMix) + (delay_out * wetMix)) * volume;
 
         // Saturation douce (clamp final)
-        if (outputL > 1.0f) outputL = 1.0f;
-        if (outputL < -1.0f) outputL = -1.0f;
-        if (outputR > 1.0f) outputR = 1.0f;
-        if (outputR < -1.0f) outputR = -1.0f;
+        if (output > 1.0f) output = 1.0f;
+        if (output < -1.0f) output = -1.0f;
 
-        outL->data[i] = (int16_t)(outputL * 32767.0f);
-        outR->data[i] = (int16_t)(outputR * 32767.0f);
+        out->data[i] = (int16_t)(output * 32767.0f);
     }
 
-    transmit(outL, 0);
-    transmit(outR, 1);
-    
-    release(outL);
-    release(outR);
-    if (inL) release(inL);
-    if (inR) release(inR);
+    transmit(out, 0);
+    release(out);
+    release(in);
 }
 
 void DelayEffect::setMix(float mix) {
@@ -196,25 +173,19 @@ void DelayEffect::setVolume(float vol)
 
 void DelayEffect::setDelayTime(float time) {
     vdelayTime = clampf(time, 0.0f, 1.0f);
-    // Mise à jour de l'état actif et de la cible du delay uniquement quand la valeur change
-    bool isActive = (vdelayTime > 0.01f);
-    delayL.active = isActive;
-    delayR.active = isActive;
 
-    // Mapping logarithmique (équivalent de fmap Mapping::LOG)
-    float log_min = logf(2400.0f);
-    float log_max = logf(static_cast<float>(MAX_DELAY));
-    float target = expf(log_min + vdelayTime * (log_max - log_min));
+    delay.active = (vdelayTime > 0.01f);
 
-    delayL.delayTarget = target;
-    delayR.delayTarget = target;
+    // Mapping linéaire : 0.0 → delay min, 1.0 → delay max
+    constexpr float MIN_DELAY_SAMPLES = 2400.0f;   // ~54 ms
+    constexpr float MAX_DELAY_SAMPLES = (float)MAX_DELAY;
+
+    delay.delayTarget = MIN_DELAY_SAMPLES + vdelayTime * (MAX_DELAY_SAMPLES - MIN_DELAY_SAMPLES);
 }
 
 void DelayEffect::setFeedback(float fdbk) {
     vdelayFDBK = clampf(fdbk, 0.0f, 0.99f);
-
-    delayL.feedback = vdelayFDBK;
-    delayR.feedback = vdelayFDBK;
+    delay.feedback = vdelayFDBK;
 }
 
 
@@ -236,3 +207,4 @@ void DelayEffect::setParameter(int param_id, float value) {
             break;
     }
 }
+
