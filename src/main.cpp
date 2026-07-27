@@ -221,6 +221,16 @@ void loop()
     Serial.print(maxLoad);
     Serial.println(" %");
 
+#if SerialUSB
+    // Affichage Charge CPU dans le moniteur série
+    Serial.print("Charge CPU Audio Actuelle : ");
+    Serial.print(avgLoad);
+    Serial.println(" %");
+
+    Serial.print("Charge CPU Audio Max : ");
+    Serial.print(maxLoad);
+    Serial.println(" %");
+
 #if PeakAnalysage
     
     // Stocker le volume actuel dans le buffer et calculer le peak
