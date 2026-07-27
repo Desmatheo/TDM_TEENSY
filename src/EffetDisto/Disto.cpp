@@ -101,7 +101,6 @@ float DistoEffect::testDistortion(float input, float gainVal){
 }
 
 float DistoEffect::testOverDrive(float input){
-    float g = input;
     float threshold = intensity;
 
     if(std::abs(input) < threshold){
@@ -116,10 +115,13 @@ float DistoEffect::testOverDrive(float input){
         float tmp = 2.0f - ((input > 0) ? input : std::abs(input)) * 3.0f;
         return ((3.0f - tmp * tmp) / 3);      
     }
+    else {
+        return 0.0f;
+    }
 }
 
 float DistoEffect::testFuzz(float input, float gainVal){
-
+    return fuzzEffect(input, gainVal);
 }
 
 float DistoEffect::dynamicPreFilterCutoff(float inputEnergy) {
