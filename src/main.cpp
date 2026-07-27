@@ -211,6 +211,16 @@ void loop()
     usbMIDI.sendControlChange(81, (uint8_t)clampf(maxLoad, 0.0f, 127.0f), 1);
 #endif
 
+#if SerialUSB
+    // Affichage Charge CPU dans le moniteur série
+    Serial.print("Charge CPU Audio Actuelle : ");
+    Serial.print(avgLoad);
+    Serial.println(" %");
+
+    Serial.print("Charge CPU Audio Max : ");
+    Serial.print(maxLoad);
+    Serial.println(" %");
+
 #if PeakAnalysage
     // Stocker le volume actuel dans le buffer et calculer le peak
     float peakValues[6];
@@ -225,19 +235,6 @@ void loop()
       peakValues[i] = maxVol;
     }
     peakIndex = (peakIndex + 1) % PEAK_BUFFER_SIZE;
-#endif
-
-#if SerialUSB
-    // Affichage Charge CPU dans le moniteur série
-    Serial.print("Charge CPU Audio Actuelle : ");
-    Serial.print(avgLoad);
-    Serial.println(" %");
-
-    Serial.print("Charge CPU Audio Max : ");
-    Serial.print(maxLoad);
-    Serial.println(" %");
-
-#if PeakAnalysage
     // Volume RMS brut de chaque corde (float 0.0 à 1.0)
     Serial.print("VOL:");
     for (int i = 0; i < 6; i++) {
