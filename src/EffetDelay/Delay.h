@@ -6,6 +6,14 @@
 #include "AudioStream.h"
 #include "arm_math.h"
 
+enum DelaySubdivision {
+    SUBDIV_WHOLE = 0,    // Ronde (4.0)
+    SUBDIV_HALF,         // Blanche (2.0)
+    SUBDIV_QUARTER,      // Noire (1.0)
+    SUBDIV_DOTTED_8TH,   // Croche pointée (0.75)
+    SUBDIV_8TH,          // Croche (0.5)
+    SUBDIV_16TH          // Double croche (0.25)
+};
  
 class DelayEffect : public AudioStream{
 public:
@@ -18,7 +26,15 @@ public:
     float volume = 1;
     float vdelayTime = 0.5f;
     float vdelayFDBK = 0.7f;
+    float timeFirstTap; 
 
+    // Nouvelles variables pour BPM / Manuel
+    int delayMode = 0;           // 0 = Manual, 1 = Tempo
+    float manualTimeMs = 500.0f; // Temps en ms si mode manuel
+    float currentBPM = 120.0f;   // BPM courant
+    DelaySubdivision currentSubdivision = SUBDIV_QUARTER;
+    
+    void recalculateDelayTime();
 
     // Structure interne pour gérer le buffer de delay
     struct DelayChannel {
@@ -61,8 +77,13 @@ public:
     // Setters pour personnalisation
     void setMix(float mix);
     void setVolume(float vol);
+    void setDelayMode(float mode);
     void setDelayTime(float time);
+    void setDelayTimeTap(float time);
     void setFeedback(float fdbk);
+    void setBpm(float bpm);
+    void setBpmTap(float time);
+    void setSubdivision(float value);
     float getMix() {return wetMix;};
 
     void setParameter(int param_id, float value);

@@ -171,16 +171,37 @@ void DelayEffect::setVolume(float vol)
     volume = clampf(vol, 0.0f, 1.0f);
 }
 
+void DelayEffect::setDelayMode(float mode) {
+    delayMode = (mode < 0.5f) ? 0 : 1;
+    recalculateDelayTime();
+}
+
 void DelayEffect::setDelayTime(float time) {
-    vdelayTime = clampf(time, 0.0f, 1.0f);
+    float log_min = logf(50.0f);
+    float log_max = logf(4000.0f);
+    manualTimeMs = expf(log_min + time * (log_max - log_min));
+    recalculateDelayTime();
+}
 
-    delay.active = (vdelayTime > 0.01f);
+void DelayEffect::setDelayTimeTap(float time) {
+    // A implémenter plus tard si besoin
+}
 
-    // Mapping linéaire : 0.0 → delay min, 1.0 → delay max
-    constexpr float MIN_DELAY_SAMPLES = 2400.0f;   // ~54 ms
-    constexpr float MAX_DELAY_SAMPLES = (float)MAX_DELAY;
+void DelayEffect::setBpm(float value) {
+    currentBPM = 40.0f + value * (250.0f - 40.0f);
+    recalculateDelayTime();
+}
 
-    delay.delayTarget = MIN_DELAY_SAMPLES + vdelayTime * (MAX_DELAY_SAMPLES - MIN_DELAY_SAMPLES);
+void DelayEffect::setBpmTap(float time) {
+    // A implémenter plus tard si besoin
+}
+
+void DelayEffect::setSubdivision(float value) {
+    int idx = roundf(value * 5.0f); // 0 à 5
+    if (idx < 0) idx = 0;
+    if (idx > 5) idx = 5;
+    currentSubdivision = static_cast<DelaySubdivision>(idx);
+    recalculateDelayTime();
 }
 
 void DelayEffect::setFeedback(float fdbk) {
@@ -188,20 +209,67 @@ void DelayEffect::setFeedback(float fdbk) {
     delay.feedback = vdelayFDBK;
 }
 
+void DelayEffect::recalculateDelayTime() {
+    float target_ms = 0.0f;
+    
+    if (delayMode == 0) { // Manual Mode
+        target_ms = manualTimeMs;
+    } else { // Tempo Mode
+        float ms_per_quarter = 60000.0f / (currentBPM > 0.01f ? currentBPM : 120.0f);
+        float multiplier = 1.0f;
+        switch (currentSubdivision) {
+            case SUBDIV_WHOLE:      multiplier = 4.0f; break;
+            case SUBDIV_HALF:       multiplier = 2.0f; break;
+            case SUBDIV_QUARTER:    multiplier = 1.0f; break;
+            case SUBDIV_DOTTED_8TH: multiplier = 0.75f; break;
+            case SUBDIV_8TH:        multiplier = 0.5f; break;
+            case SUBDIV_16TH:       multiplier = 0.25f; break;
+        }
+        target_ms = ms_per_quarter * multiplier;
+    }
+
+    // Convert ms to samples
+    float target_samples = target_ms * (AUDIO_SAMPLE_RATE_EXACT / 1000.0f);
+
+    // Limit to max and min
+    if (target_samples > static_cast<float>(MAX_DELAY)) {
+        target_samples = static_cast<float>(MAX_DELAY);
+    }
+    if (target_samples < 2400.0f) { // Min internal limit
+        target_samples = 2400.0f;
+    }
+
+    delay.delayTarget = target_samples;
+
+    delay.active = true;
+}
+
 
 void DelayEffect::setParameter(int param_id, float value) {
     switch (param_id) {
-        case 0:
-            setMix(value);
+        case 0: // CC 10 - Type (Mode)
+            setDelayMode(value);
             break;
-        case 1:
-            setDelayTime(value);
+        case 1: // CC 11 - Time / Tempo
+            if (delayMode == 0) {
+                setDelayTime(value);
+            } else {
+                setBpm(value);
+            }
             break;
-        case 2:
+        case 2: // CC 12 - Tap
+            break;
+        case 3: // CC 13 - Temps (Subdivision)
+            setSubdivision(value);
+            break;
+        case 4: // CC 14 - Feedback
             setFeedback(value);
             break;
-        case 5: 
+        case 5: // CC 15 - Volume
             setVolume(value);
+            break;
+        case 6: // CC 16 - Mix
+            setMix(value);
             break;
         default:
             break;

@@ -27,8 +27,8 @@ static void OnControlChange(byte channel, byte control, byte value) {
 
     // --- A. CONTRÔLES SPÉCIFIQUES À UNE CORDE (via canal MIDI 1-6 / 0-5) ---
 
-    // 1. DELAY (CC 10 à 16 ou plage 10 à 45)
-    if (control >= 10 && control <= 45) {
+    // 1. DELAY (CC 10 à 16 ou plage 10 à 51)
+    if (control >= 10 && control <= 51) {
         int potard = 0;
         int targetCorde = corde;
 
@@ -36,10 +36,10 @@ static void OnControlChange(byte channel, byte control, byte value) {
             // Mapping via Canal MIDI (CC 10-16 sur le canal de la corde)
             potard = control - 10;
         } else {
-            // Mapping via plage CC continue (CC 10-45 : 6 cordes x 6 potards)
+            // Mapping via plage CC continue (CC 10-51 : 6 cordes x 7 potards)
             int ccRelatif = control - 10;
-            targetCorde = ccRelatif / 6;
-            potard = ccRelatif % 6;
+            targetCorde = ccRelatif / 7;
+            potard = ccRelatif % 7;
         }
 
         if (targetCorde >= 0 && targetCorde < 6) {
