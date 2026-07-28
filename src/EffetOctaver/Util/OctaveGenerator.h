@@ -27,9 +27,9 @@ public:
         _down1 = 0;
         _down2 = 0;
 
-        if (type == 1) numBand = 80;
-        if (type == 2) numBand = 40;
-        if (type == 3) numBand = 40;
+        if (type == 1) numBand = 24;
+        if (type == 2) numBand = 12;
+        if (type == 3) numBand = 12;
 
         for (int i = 0; i < numBand; i++) {
             _shifters[i].update(sample, type);
@@ -58,7 +58,7 @@ public:
 private:
     static inline float centerFreq(const int n)
     {
-        return 480.0f * std::pow(2.0f, (0.027f * n)) - 420.0f;
+        return 480.0f * std::pow(2.0f, (0.09f * n)) - 420.0f;
     }
 
     static inline float bandwidth(const int n)

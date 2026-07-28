@@ -106,40 +106,48 @@ private:
         const auto b = _y.imag();
         const auto a_carre = a*a;
         const auto b_carre = b*b;
-        // _up1 = (a*a - b*b) * fastInvSqrt(a*a + b*b);
-        _up1 = (a_carre - b_carre) * fastInvSqrt(a_carre + b_carre);
+        // _up1 = (a*a - b*b) * fastInvSqrt(a*a + b*b);        
+        const auto mag_sq = a_carre + b_carre;                                      //#modif
+        const auto safe_mag = (mag_sq < 1e-4f) ? 1e-4f : mag_sq;                    //#modif
+        _up1 = (a_carre - b_carre) * fastInvSqrt(safe_mag);                         //#modif
     }
 
-    void update_down1()
+  void update_down1()
     {
         const auto a = _y.real();
         const auto b = _y.imag();
         const auto b_sign = (b < 0) ? -1.0f : 1.0f;
-
-        const auto x = 0.5f * a * fastInvSqrt(a*a + b*b);
-        const auto c = fastSqrt(0.5f + x);
-        const auto d = b_sign * fastSqrt(0.5f - x);
-
+ 
+        const auto mag_sq = a*a + b*b;
+        // Soft-clamp qui supprime parfaitement les grésillements
+        const auto safe_mag = (mag_sq < 1e-4f) ? 1e-4f : mag_sq;
+ 
+        const auto x = 0.5f * a * fastInvSqrt(safe_mag);
+        const auto c = fastSqrt(std::max(0.0f, 0.5f + x));                  //#modif
+        const auto d = b_sign * fastSqrt(std::max(0.0f, 0.5f - x));         //#modif
+ 
         const auto prev_down1 = _down1;
         _down1 = _down1_sign * std::complex<float>((a*c + b*d), (b*c - a*d));
-
+ 
         if ((_down1.real() < 0) &&
             (std::signbit(_down1.imag()) != std::signbit(prev_down1.imag())))
         {
             _down2_sign = -_down2_sign;
         }
     }
-
     void update_down2()
     {
         const auto a = _down1.real();
         const auto b = _down1.imag();
         const auto b_sign = (b < 0) ? -1.0f : 1.0f;
-
-        const auto x = 0.5f * a * fastInvSqrt(a*a + b*b);
-        const auto c = fastSqrt(0.5f + x);
-        const auto d = b_sign * fastSqrt(0.5f - x);
-
+ 
+        const auto mag_sq = a*a + b*b;
+        const auto safe_mag = (mag_sq < 1e-4f) ? 1e-4f : mag_sq;
+ 
+        const auto x = 0.5f * a * fastInvSqrt(safe_mag);
+        const auto c = fastSqrt(std::max(0.0f, 0.5f + x));                          //#modif
+        const auto d = b_sign * fastSqrt(std::max(0.0f, 0.5f - x));                 //#modif
+ 
         _down2 = _down2_sign * (a*c + b*d);
     }
 
