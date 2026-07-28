@@ -6,19 +6,12 @@
 #include "AudioStream.h"
 #include "arm_math.h"
 
-enum DelaySubdivision {
-    SUBDIV_WHOLE = 0,    // Ronde (4.0)
-    SUBDIV_HALF,         // Blanche (2.0)
-    SUBDIV_QUARTER,      // Noire (1.0)
-    SUBDIV_DOTTED_8TH,   // Croche pointée (0.75)
-    SUBDIV_8TH,          // Croche (0.5)
-    SUBDIV_16TH          // Double croche (0.25)
-};
+
  
 class DelayEffect : public AudioStream{
 public:
 
-    static constexpr size_t MAX_DELAY = static_cast<size_t>(44100 * 2.0f);
+    static constexpr size_t MAX_DELAY = static_cast<size_t>(44100 * 4.0f);
 
     // Paramètres internes
     float dryMix = 0.5f;
@@ -32,7 +25,7 @@ public:
     int delayMode = 0;           // 0 = Manual, 1 = Tempo
     float manualTimeMs = 500.0f; // Temps en ms si mode manuel
     float currentBPM = 120.0f;   // BPM courant
-    DelaySubdivision currentSubdivision = SUBDIV_QUARTER;
+    float currentSubdivisionMult = 1.0f; // Multiplicateur rythmique (1.0 = Noire)
     
     void recalculateDelayTime();
 

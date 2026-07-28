@@ -10,6 +10,8 @@
 
 #if Usb
 #define SerialUSB 1
+#define CPU_Serial 1
+#define CPU_MIDI 1
 
 #define USE_MIDI_USB 1
 

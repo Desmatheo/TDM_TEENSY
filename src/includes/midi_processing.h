@@ -15,6 +15,14 @@ static bool globalBypassState = false; // Bypass global
 static void OnControlChange(byte channel, byte control, byte value) {
     #pragma region Control MIDI
     float valNorm = value / 127.0f;
+    
+    Serial.print("Test MIDI => Channel : ");
+    Serial.print(channel);
+    Serial.print(", Control: ");
+    Serial.print(control);
+    Serial.print(", Value : ");
+    Serial.println(value);
+
 
     // Sur Teensy usbMIDI, channel est indexé de 1 à 16.
     // Convertir en index de corde 0..5 si le canal MIDI est dans la plage 1..6 (ou 0..5).
@@ -25,49 +33,66 @@ static void OnControlChange(byte channel, byte control, byte value) {
         corde = channel;
     }
 
-    // --- A. CONTRÔLES SPÉCIFIQUES À UNE CORDE (via canal MIDI 1-6 / 0-5) ---
+    if (control == 48 || control == 88 || control == 89) {
+        // Bypass par Effets 
+        // 48 = Delay, 88 = Distortion, 89 = Octaver.
 
-    // 1. DELAY (CC 10 à 16 ou plage 10 à 51)
-    if (control >= 10 && control <= 51) {
+        int targetCorde = (corde >= 0 && corde < 6) ? corde : 0;
+        bool isBypassed = (value > 63);
+
+        //if (isBypassed) {
+            if (control == 48) {
+                delayActif[targetCorde] = !isBypassed;
+                DelaysObj[targetCorde].setEnabled(!isBypassed);
+            } else if (control == 88) {
+                distoActif[targetCorde] = !isBypassed;
+                DistosObj[targetCorde].setEnabled(!isBypassed);
+            } else if (control == 89) {
+                octaverActif[targetCorde] = !isBypassed;
+                OctaverObj[targetCorde].setEnabled(!isBypassed);
+            }
+
+#if SerialUSB
+            Serial.print("MIDI -> Effet Bypass via CC ");
+            Serial.print(control);
+            Serial.print(" | Corde: ");
+            Serial.print(targetCorde);
+            Serial.print(" | isBypass: ");
+            Serial.println(isBypassed);
+#endif
+        //} 
+    } else if (control >= 10 && control <= 51) {
+        // Delay
+
+        
         int potard = 0;
         int targetCorde = corde;
 
         if (control >= 10 && control <= 16 && corde >= 0 && corde < 6) {
-            // Mapping via Canal MIDI (CC 10-16 sur le canal de la corde)
             potard = control - 10;
         } else {
-            // Mapping via plage CC continue (CC 10-51 : 6 cordes x 7 potards)
             int ccRelatif = control - 10;
             targetCorde = ccRelatif / 7;
             potard = ccRelatif % 7;
         }
 
         if (targetCorde >= 0 && targetCorde < 6) {
-            // Si la valeur est 0 sur le potard 0 (interrupteur d'activation de l'effet), désactiver l'effet
-            if (value == 0 && potard == 0) {
-                delayActif[targetCorde] = false;
-                DelaysObj[targetCorde].setEnabled(false);
-#if SerialUSB
-                Serial.print("MIDI -> Effet: DELAY OFF | Corde: ");
-                Serial.println(targetCorde);
-#endif
-            } else {
-                delayActif[targetCorde] = true; // Mémorise que Delay est actif sur cette corde
-                if (!stringBypass[targetCorde] && !globalBypassState) {
-                    DelaysObj[targetCorde].setEnabled(true);
-                }
-
-                DelaysObj[targetCorde].setParameter(potard, valNorm);
-
-#if SerialUSB
-                Serial.print("MIDI -> Effet: DELAY | Corde: ");
-                Serial.print(targetCorde);
-                Serial.print(" | Potard: P");
-                Serial.print(potard + 1);
-                Serial.print(" | Valeur: ");
-                Serial.println(value);
-#endif
+            delayActif[targetCorde] = true; // Mémorise que Delay est actif sur cette corde
+            if (!stringBypass[targetCorde] && !globalBypassState) {
+                DelaysObj[targetCorde].setEnabled(true);
             }
+
+            DelaysObj[targetCorde].setParameter(potard, valNorm);
+
+#if SerialUSB
+            Serial.print("MIDI -> Effet: DELAY | Corde: ");
+            Serial.print(targetCorde);
+            Serial.print(" | Potard: P");
+            Serial.print(potard + 1);
+            Serial.print(" | Valeur: ");
+            Serial.println(value);
+#endif
+            
         }
     }
 
@@ -178,52 +203,7 @@ static void OnControlChange(byte channel, byte control, byte value) {
             if (distoActif[targetCorde])   DistosObj[targetCorde].setEnabled(true);
             if (octaverActif[targetCorde]) OctaverObj[targetCorde].setEnabled(true);
         }
-    }
-
-    // 5. BYPASS PAR EFFET (CC 48, 88, 89)
-    else if (control == 48 || control == 88 || control == 89) {
-        int targetCorde = (corde >= 0 && corde < 6) ? corde : 0;
-        bool isBypassed = (value > 63);
-
-        if (isBypassed) {
-            if (control == 48) {
-                delayActif[targetCorde] = false;
-                DelaysObj[targetCorde].setEnabled(false);
-            } else if (control == 88) {
-                distoActif[targetCorde] = false;
-                DistosObj[targetCorde].setEnabled(false);
-            } else if (control == 89) {
-                octaverActif[targetCorde] = false;
-                OctaverObj[targetCorde].setEnabled(false);
-            }
-
-#if SerialUSB
-            Serial.print("MIDI -> Effet Bypass via CC ");
-            Serial.print(control);
-            Serial.print(" | Corde: ");
-            Serial.println(targetCorde);
-#endif
-        } else {
-            // Activation de l'effet correspondant
-            if (control == 48) {
-                delayActif[targetCorde] = true;
-                if (!stringBypass[targetCorde] && !globalBypassState) DelaysObj[targetCorde].setEnabled(true);
-            } else if (control == 88) {
-                distoActif[targetCorde] = true;
-                if (!stringBypass[targetCorde] && !globalBypassState) DistosObj[targetCorde].setEnabled(true);
-            } else if (control == 89) {
-                octaverActif[targetCorde] = true;
-                if (!stringBypass[targetCorde] && !globalBypassState) OctaverObj[targetCorde].setEnabled(true);
-            }
-
-#if SerialUSB
-            Serial.print("MIDI -> Effet Active via CC ");
-            Serial.print(control);
-            Serial.print(" | Corde: ");
-            Serial.println(targetCorde);
-#endif
-        }
-    }
+    } 
 
     // 6. BYPASS GLOBAL (CC 126)
     else if (control == 126) {

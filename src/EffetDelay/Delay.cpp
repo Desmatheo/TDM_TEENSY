@@ -177,9 +177,8 @@ void DelayEffect::setDelayMode(float mode) {
 }
 
 void DelayEffect::setDelayTime(float time) {
-    float log_min = logf(50.0f);
-    float log_max = logf(4000.0f);
-    manualTimeMs = expf(log_min + time * (log_max - log_min));
+    // Mapping linéaire de 50ms à 4000ms
+    manualTimeMs = 50.0f + time * (4000.0f - 50.0f);
     recalculateDelayTime();
 }
 
@@ -197,10 +196,23 @@ void DelayEffect::setBpmTap(float time) {
 }
 
 void DelayEffect::setSubdivision(float value) {
-    int idx = roundf(value * 5.0f); // 0 à 5
+    // 8 paliers répartis sur 0.0 à 1.0
+    int idx = roundf(value * 7.0f); 
     if (idx < 0) idx = 0;
-    if (idx > 5) idx = 5;
-    currentSubdivision = static_cast<DelaySubdivision>(idx);
+    if (idx > 7) idx = 7;
+    
+    // Tableau des 8 multiplicateurs (du plus rapide au plus lent)
+    // 0 = Double Croche (0.25)
+    // 1 = Croche (0.5)
+    // 2 = Croche Pointée (0.75 - The Edge)
+    // 3 = Noire (1.0)
+    // 4 = Noire Pointée (1.5)
+    // 5 = Blanche (2.0)
+    // 6 = Blanche Pointée (3.0)
+    // 7 = Ronde (4.0)
+    const float multipliers[8] = {0.25f, 0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f};
+    
+    currentSubdivisionMult = multipliers[idx];
     recalculateDelayTime();
 }
 
@@ -216,16 +228,7 @@ void DelayEffect::recalculateDelayTime() {
         target_ms = manualTimeMs;
     } else { // Tempo Mode
         float ms_per_quarter = 60000.0f / (currentBPM > 0.01f ? currentBPM : 120.0f);
-        float multiplier = 1.0f;
-        switch (currentSubdivision) {
-            case SUBDIV_WHOLE:      multiplier = 4.0f; break;
-            case SUBDIV_HALF:       multiplier = 2.0f; break;
-            case SUBDIV_QUARTER:    multiplier = 1.0f; break;
-            case SUBDIV_DOTTED_8TH: multiplier = 0.75f; break;
-            case SUBDIV_8TH:        multiplier = 0.5f; break;
-            case SUBDIV_16TH:       multiplier = 0.25f; break;
-        }
-        target_ms = ms_per_quarter * multiplier;
+        target_ms = ms_per_quarter * currentSubdivisionMult;
     }
 
     // Convert ms to samples

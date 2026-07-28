@@ -138,7 +138,7 @@ void setup()
     
 #if TestMano 
     OctaverObj[i].setEnabled(false);
-    DelaysObj[i].setEnabled(true);
+    DelaysObj[i].setEnabled(false);
     DistosObj[i].setEnabled(false);
     TremolosObj[i].setEnabled(false);  
 #endif
@@ -165,11 +165,11 @@ void setup()
   }
 #endif
 
+  pinMode(LED_BUILTIN, OUTPUT);
+
 #if USE_MIDI_USB
   usbMIDI.setHandleControlChange(OnControlChange);
 #endif
-
-  pinMode(LED_BUILTIN, OUTPUT);
 
 #if !SerialUSB
     Serial.end();
@@ -206,12 +206,16 @@ void loop()
     }
 
 #if USE_MIDI_USB
+#if CPU_MIDI
     // Envoi de la charge CPU moyenne (CC 80) et max (CC 81) sur le canal 1
     usbMIDI.sendControlChange(80, (uint8_t)clampf(avgLoad, 0.0f, 127.0f), 1);
     usbMIDI.sendControlChange(81, (uint8_t)clampf(maxLoad, 0.0f, 127.0f), 1);
 #endif
+#endif
 
 #if SerialUSB
+
+#if CPU_Serial
     // Affichage Charge CPU dans le moniteur série
     Serial.print("Charge CPU Audio Actuelle : ");
     Serial.print(avgLoad);
@@ -220,18 +224,11 @@ void loop()
     Serial.print("Charge CPU Audio Max : ");
     Serial.print(maxLoad);
     Serial.println(" %");
-
-#if SerialUSB
-    // Affichage Charge CPU dans le moniteur série
-    Serial.print("Charge CPU Audio Actuelle : ");
-    Serial.print(avgLoad);
-    Serial.println(" %");
-
-    Serial.print("Charge CPU Audio Max : ");
-    Serial.print(maxLoad);
-    Serial.println(" %");
+#endif
 
 #if PeakAnalysage
+// Le peakAnalysage sert a traquer la valeure d'entrée des signaux. Ça sert a égaliser etc.. ou juste debugger :)
+// Besoin du SerialUSB pour pouvoir envoyer les valeures, aussi non c'est pas possible
     
     // Stocker le volume actuel dans le buffer et calculer le peak
     float peakValues[6];
