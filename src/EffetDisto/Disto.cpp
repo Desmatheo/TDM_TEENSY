@@ -7,6 +7,19 @@
 #include <cmath>
 #include <algorithm>
 
+inline float fast_tanh(float x) {
+    if (x <= -3.0f) return -1.0f;
+    if (x >= 3.0f) return 1.0f;
+    float x2 = x * x;
+    return x * (27.0f + x2) / (27.0f + 9.0f * x2);
+}
+
+inline float fast_atan(float x) {
+    // Fast overdrive approximation replacing atan
+    return x / (1.0f + std::abs(x));
+}
+
+
 DistoEffect::DistoEffect(float sampleRate)
     : AudioStream(1, inputQueueArray_),
       preFilter(preFilterCutoffBase, sampleRate),
@@ -16,7 +29,7 @@ DistoEffect::DistoEffect(float sampleRate)
     tone.Init(sampleRate);
 
     // Pivot between 500 Hz and 2 kHz as the tone amount changes
-    tone.SetFreq(toneFreq);
+    tone.SetFreq(500.0f + 1500.0f * toneAmount);
 
     samplerate = sampleRate;
 
@@ -42,91 +55,64 @@ void DistoEffect::InitializeFilters() {
     upsamplingLowpassFilter.config(samplerate / (2.0f * static_cast<float>(overFactor)), samplerate);
 }
 
-float DistoEffect::hardClipping(float input, float threshold) { return std::clamp(input, -threshold, threshold); }
+float DistoEffect::hardClipping(float input, float threshold) { 
+    return std::clamp(input, -threshold, threshold); 
+}
 
 float DistoEffect::diodeClipping(float input, float threshold) {
+    // Soft exponential knee mimicking a diode curve
     if (input > threshold)
-        return threshold - std::exp(-(input - threshold));
+        return threshold + (1.0f - expf(-(input - threshold)));
     else if (input < -threshold)
-        return -threshold + std::exp(input + threshold);
+        return -threshold - (1.0f - expf(input + threshold));
     return input;
 }
 
 float DistoEffect::softClipping(float input, float gainVal) { 
-    return std::tanh(input * gainVal); 
+    return fast_tanh(input * gainVal); 
 }
 
 float DistoEffect::fuzzEffect(float input, float intensityVal) {
-    // Symmetrical clipping with extreme compression
-    float fuzzed = softClipping(input, intensityVal);
-
-    // Introduce a slight asymmetry for a classic fuzz character and adds harmonic content
-    fuzzed += 0.05f * std::sin(input * 20.0f);
-
-    // Dynamic response: Adjust the intensity based on the input signal's amplitude
-    const float dynamicIntensity = intensityVal * (1.0f + 0.5f * std::abs(input));
-    fuzzed = softClipping(fuzzed, dynamicIntensity);
-
-    return fuzzed;
+    // Fuzz faces are often heavily asymmetrical
+    float driven = input * (1.0f + intensityVal * 20.0f); // Massive gain
+    
+    if (driven > 0.0f) {
+        return fast_tanh(driven);
+    } else {
+        // Hard clip the negative side for strong even harmonics
+        return std::clamp(driven, -1.0f, 0.0f);
+    }
 }
 
-float DistoEffect::tubeSaturation(float input, float gainVal) { return std::atan(input * gainVal); }
+float DistoEffect::tubeSaturation(float input, float gainVal) { 
+    // Atan is a softer curve than tanh, good for tube warmth
+    return fast_atan(input * gainVal); 
+}
 
 float DistoEffect::multiStage(float sample, float drive, float intensityVal) {
-    // First stage
-    const float stage1 = softClipping(sample, drive * intensityVal * 2.0f);
-
-    // Second stage
-    const float stage2 = softClipping(stage1, drive * intensityVal);
-
-    // Power amp, mimic second tube clipping, possibly negative feedback
-    const float result = tubeSaturation(stage2, drive * intensityVal);
-
-    return result;
+    // Stage 1: Soft clip
+    float s1 = fast_tanh(sample * drive);
+    // Stage 2: Boost and soft clip again
+    float s2 = fast_tanh(s1 * (1.0f + intensityVal * 5.0f));
+    return s2;
 }
 
 float DistoEffect::testDistortion(float input, float gainVal){
-    float g = input * gainVal; 
-    
-#define Qlib 1
-
-#if Qlib
-#if 1
-    float z = ((g < std::signbit(g))? (-1.0f) : 1.0f) * (1.0f - fastexp(-std::abs(g))); 
-#else 
-    float z = ((g < std::signbit(g))? (-1.0f) : 1.0f) * (1.0f - fasterexp(-std::abs(g))); 
-#endif
-#else
-    float z = ((g < std::signbit(g))? (-1.0f) : 1.0f) * (1.0f - std::exp(-std::abs(g))); 
-#endif
-    return z; 
+    float g = input * gainVal;
+    float sign = (g < 0.0f) ? -1.0f : 1.0f;
+    return sign * (1.0f - expf(-std::abs(g)));
 }
 
 float DistoEffect::testOverDrive(float input){
-    // float g = input;
-    float threshold = intensity;
-
-    if(std::abs(input) < threshold){
-        return 2 * input;
-    }
-    else if (std::abs(input) > 2 * threshold){
-        return 1.0f;
-    }
-    else if (std::abs(input) > threshold){
-        // tmp pour pas faire 2 fois le meme calcul :)
-        // par rapport au livre, j'ai tout fait en une ligne, et - pour eviter le abs (qui peut faire 2 3 coups de clock inutiles en plus)
-        float tmp = 2.0f - ((input > 0) ? input : std::abs(input)) * 3.0f;
-        return ((3.0f - tmp * tmp) / 3);      
-    }
-    return input;
+    // Standard cubic soft clipper (mathematically continuous without glitches)
+    // f(x) = x - x^3/3 for -1 < x < 1
+    if (input >= 1.0f) return 0.666666f;
+    if (input <= -1.0f) return -0.666666f;
+    return input - (input * input * input) / 3.0f;
 }
 
 float DistoEffect::testFuzz(float input, float gainVal){
     return input;
-}
-
-float DistoEffect::dynamicPreFilterCutoff(float inputEnergy) {
-    return preFilterCutoffBase + (preFilterCutoffMax - preFilterCutoffBase) * std::tanh(inputEnergy);
 }
 
 // Helper functions for oversampling
@@ -159,63 +145,75 @@ void DistoEffect::processDistortion(float &sample,           // Sample to proces
                                     const int &clippingType, // Clipping type
                                     const float &intensityVal)  // Intensity
 {
-
+    // Do NOT multiply sample *= gainVal here, otherwise we get double gain!
+    
     switch (clippingType) {
     case 0: // Hard Clipping
         {
-            sample *= gainVal;
-            float threshold = 1.0f - intensityVal * 0.9f;
-            sample = hardClipping(sample, threshold) / threshold;
+            float driven = sample * gainVal;
+            float thresh = 1.0f - (intensityVal * 0.9f); // 1.0 to 0.1
+            sample = hardClipping(driven, thresh) / thresh; // Normalize volume
         }
         break;
     case 1: // Soft Clipping
-        sample *= gainVal;
-        sample = softClipping(sample, 1.0f);
+        // Use intensity to add extra drive
+        sample = softClipping(sample, gainVal * (1.0f + intensityVal * 4.0f));
         break;
-    case 2: // Fuzz        
-        sample *= gainVal;
-        sample = fuzzEffect(sample, 1.0f + intensityVal * 9.0f);
+    case 2: // Fuzz
+        sample = fuzzEffect(sample * gainVal, intensityVal);
         break;
     case 3: // Tube Saturation
-        sample = tubeSaturation(sample, 1.0f + intensityVal * 9.0f);
+        sample = tubeSaturation(sample, gainVal * (1.0f + intensityVal * 4.0f));
         break;
     case 4: // Multi-stage
-        sample = multiStage(sample, 1.0f, 1.0f + intensityVal * 9.0f);
+        sample = multiStage(sample, gainVal, intensityVal);
         break;
     case 5: // Diode Clipping
         {
-            float threshold = 1.0f - intensityVal * 0.9f;
-            sample = diodeClipping(sample, threshold) / threshold;
+            float driven = sample * gainVal;
+            float thresh = 1.0f - (intensityVal * 0.9f);
+            sample = diodeClipping(driven, thresh) / thresh;
         }
         break;
-    case 6 : 
-        sample = testDistortion(sample, gainVal);
+    case 6: // Test Distortion (Exponential soft clip)
+        sample = testDistortion(sample, gainVal * (1.0f + intensityVal * 4.0f));
         break;
-    case 7 : 
-        sample = testOverDrive(sample);
+    case 7: // Test Overdrive (Cubic soft clip)
+        {
+            float driven = sample * gainVal * (1.0f + intensityVal * 4.0f);
+            sample = testOverDrive(driven) * 1.5f; // 1.5 normalizes 2/3 output to 1.0
+        }
         break;
     }
 }
 
 void DistoEffect::normalizeVolume(float &sample, int clippingType) {
+    // Balance perceived loudness between different distortion algorithms
+    // A square wave (hard clip) sounds much louder than a rounded wave peaking at the same level.
     switch (clippingType) {
-    case 0: // Hard Clipping
-        sample *= 1.0f;
+    case 0: // Hard Clipping (very loud)
+        sample *= 0.5f;
         break;
     case 1: // Soft Clipping
-        sample *= 1.0f;
+        sample *= 0.7f;
         break;
-    case 2: // Fuzz
-        sample *= 1.0f;
+    case 2: // Fuzz (very loud)
+        sample *= 0.5f;
         break;
-    case 3: // Tube Saturation
-        sample *= 1.0f;
+    case 3: // Tube Saturation (softer)
+        sample *= 0.9f;
         break;
-    case 4: // Multi-stage
-        sample *= 1.0f;
+    case 4: // Multi-stage (loud)
+        sample *= 0.6f;
         break;
     case 5: // Diode Clipping
-        sample *= 1.0f;
+        sample *= 0.5f;
+        break;
+    case 6: // Test Distortion
+        sample *= 0.7f;
+        break;
+    case 7: // Test Overdrive (Cubic)
+        sample *= 0.75f;
         break;
     }
 }
@@ -249,13 +247,14 @@ void DistoEffect::update() {
 
     for (int i = 0; i < AUDIO_BLOCK_SAMPLES; i++) {
         float inputL = (float)in->data[i] / 32768.0f;
-        inputL += 1e-9f; // Anti-denormal
+        
+        // Bruit de Nyquist (alterné) : +1e-9f, -1e-9f, +1e-9f...
+        anti_denormal = -anti_denormal;
+        inputL += anti_denormal;
 
         float distorted = inputL;
 
         // Apply high-pass filter to remove excessive low frequencies
-        const float energy = std::abs(distorted);
-        preFilter.config(dynamicPreFilterCutoff(energy), samplerate);
         distorted = preFilter(distorted);
 
         const float computed_gain = min_gain + (this->gain * (max_gain - min_gain));
@@ -263,28 +262,10 @@ void DistoEffect::update() {
         // Reduce signal amplitude before clipping
         distorted = distorted * 0.5f;
 
-        // if (false) {
-        //     // Prepare signal for oversampling
-        //     std::vector<float> monoInput = {distorted};
-        //     std::vector<float> oversampledInput = upsample(monoInput, overFactor, samplerate);
+        processDistortion(distorted, computed_gain, effect_mode, intensity);
 
-        //     // Apply gain and distortion processing
-        //     for (float &sample : oversampledInput) {
-        //         processDistortion(sample, computed_gain, effect_mode, intensity);
-
-        //         // Post-filter: Low-pass to smooth out harsh high frequencies
-        //         sample = postFilter(sample);
-        //     }
-
-        //     // Downsample back to original sample rate
-        //     const std::vector<float> downsampledOutput = downsample(oversampledInput, overFactor);
-        //     distorted = downsampledOutput[0];
-        // } else {
-            processDistortion(distorted, computed_gain, effect_mode, intensity);
-
-            // Post-filter: Low-pass to smooth out harsh high frequencies
-            distorted = postFilter(distorted);
-        // }
+        // Post-filter: Low-pass to smooth out harsh high frequencies
+        distorted = postFilter(distorted);
 
         // Normalize the volume between the types of distortion
         normalizeVolume(distorted, effect_mode);
@@ -312,7 +293,6 @@ void DistoEffect::setGain(float val) {
 }
 
 void DistoEffect::setTone(float freq) {
-    // freq = freq * 1500.0f;
     toneAmount = clampf(freq, 0.0f, 1.0f);
     toneFreq = 500.0f + toneAmount * 1500.0f ;
     tone.SetFreq(toneFreq);

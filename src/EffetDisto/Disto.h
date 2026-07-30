@@ -67,6 +67,7 @@ class DistoEffect : public AudioStream {
 private:
     bool active = false; // effet actif ou non
     audio_block_t* inputQueueArray_[1];
+    float anti_denormal = 1e-9f;
 
     // Helper functions for distortion and clipping
     float hardClipping(float input, float threshold);
@@ -79,8 +80,6 @@ private:
     float testDistortion(float input, float gainVal);
     float testOverDrive(float input);
     float testFuzz(float input, float gainVal);
-
-    float dynamicPreFilterCutoff(float inputEnergy);
     
     std::vector<float> upsample(const std::vector<float> &input, int factor, float sample_rate);
     std::vector<float> downsample(const std::vector<float> &input, int factor);
