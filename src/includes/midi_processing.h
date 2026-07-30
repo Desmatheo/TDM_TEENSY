@@ -8,6 +8,7 @@ static bool delayActif[6] = {false};   // État d'activation du Delay
 static bool distoActif[6] = {false};   // État d'activation de la Disto
 static bool octaverActif[6] = {false}; // État d'activation de l'Octaver
 static bool tremoloActif[6] = {false}; // État d'activation du Tremolo
+static bool noiseGateActif[6] = {false}; // État d'activation du Noise Gate
 static bool stringBypass[6] = {false}; // Bypass individuel par corde (Mute)
 static bool globalBypassState = false; // Bypass global
 
@@ -37,7 +38,7 @@ static void OnControlChange(byte channel, byte control, byte value) {
     }
 
     // Bypass effets individuel
-    if (control == 48 || control == 88 || control == 89 || control == 118) {
+    if (control == 48 || control == 88 || control == 89 || control == 118 || control == 119) {
         bool isBypassed = (value > 63);
 
         if (control == 48) {
@@ -52,6 +53,9 @@ static void OnControlChange(byte channel, byte control, byte value) {
         } else if (control == 118) {
             tremoloActif[targetCorde] = !isBypassed;
             TremolosObj[targetCorde].setEnabled(!isBypassed);
+        } else if (control == 119) {
+            noiseGateActif[targetCorde] = !isBypassed;
+            NoiseGatesObj[targetCorde].setEnabled(!isBypassed);
         }
 #if SerialUSB
         Serial.print("MIDI -> Effet Bypass via CC ");
@@ -147,6 +151,27 @@ static void OnControlChange(byte channel, byte control, byte value) {
 #endif
     }
 
+    // Noise Gate
+    else if (control >= 120 && control <= 122) {
+        int potard = control - 120;
+
+        noiseGateActif[targetCorde] = true; 
+        if (!stringBypass[targetCorde] && !globalBypassState) {
+            NoiseGatesObj[targetCorde].setEnabled(true);
+        }
+
+        NoiseGatesObj[targetCorde].setParameter(potard, valNorm);
+
+#if SerialUSB
+        Serial.print("MIDI -> Effet: NOISE GATE | Corde: ");
+        Serial.print(targetCorde);
+        Serial.print(" | Potard: P");
+        Serial.print(potard + 1);
+        Serial.print(" | Valeur: ");
+        Serial.println(value);
+#endif
+    }
+
     // Bypass par corde
     else if (control >= 0 && control <= 5) {
         int corde = control; // CC de 0 à 5 correspondent à la corde
@@ -165,12 +190,14 @@ static void OnControlChange(byte channel, byte control, byte value) {
             DelaysObj[corde].setEnabled(false);
             OctaverObj[corde].setEnabled(false);
             TremolosObj[corde].setEnabled(false);
+            NoiseGatesObj[corde].setEnabled(false);
         } else {
             // Sortie de mute : réactivation des effets qui étaient configurés
             if (delayActif[corde])   DelaysObj[corde].setEnabled(true);
             if (distoActif[corde])   DistosObj[corde].setEnabled(true);
             if (octaverActif[corde]) OctaverObj[corde].setEnabled(true);
             if (tremoloActif[corde]) TremolosObj[corde].setEnabled(true);
+            if (noiseGateActif[corde]) NoiseGatesObj[corde].setEnabled(true);
         }
     } 
 
@@ -189,11 +216,13 @@ static void OnControlChange(byte channel, byte control, byte value) {
                 DelaysObj[i].setEnabled(false);
                 OctaverObj[i].setEnabled(false);
                 TremolosObj[i].setEnabled(false);
+                NoiseGatesObj[i].setEnabled(false);
             } else {
                 if (delayActif[i])   DelaysObj[i].setEnabled(true);
                 if (distoActif[i])   DistosObj[i].setEnabled(true);
                 if (octaverActif[i]) OctaverObj[i].setEnabled(true);
                 if (tremoloActif[i]) TremolosObj[i].setEnabled(true);
+                if (noiseGateActif[i]) NoiseGatesObj[i].setEnabled(true);
             }
         }
     }

@@ -8,6 +8,7 @@ DelayEffect              DelaysObj[6];
 OctaverEffect            OctaverObj[6];
 DistoEffect              DistosObj[6];
 TremoloEffect            TremolosObj[6]; 
+NoiseGateEffect          NoiseGatesObj[6];
 #endif
 BypassEffect             BypassObj[6];
 
@@ -68,12 +69,19 @@ AudioConnection c27(TremolosObj[3], 0, DelaysObj[3], 0);
 AudioConnection c28(TremolosObj[4], 0, DelaysObj[4], 0);           
 AudioConnection c29(TremolosObj[5], 0, DelaysObj[5], 0);           
 
-AudioConnection c30(DelaysObj[0], 0, mixer_1a4,  0);
-AudioConnection c31(DelaysObj[1], 0, mixer_1a4,  1);
-AudioConnection c32(DelaysObj[2], 0, mixer_1a4,  2);
-AudioConnection c33(DelaysObj[3], 0, mixer_1a4,  3);
-AudioConnection c34(DelaysObj[4], 0, mixer_5et6, 0);
-AudioConnection c35(DelaysObj[5], 0, mixer_5et6, 1);
+AudioConnection ng0(DelaysObj[0], 0, NoiseGatesObj[0], 0);
+AudioConnection ng1(DelaysObj[1], 0, NoiseGatesObj[1], 0);
+AudioConnection ng2(DelaysObj[2], 0, NoiseGatesObj[2], 0);
+AudioConnection ng3(DelaysObj[3], 0, NoiseGatesObj[3], 0);
+AudioConnection ng4(DelaysObj[4], 0, NoiseGatesObj[4], 0);
+AudioConnection ng5(DelaysObj[5], 0, NoiseGatesObj[5], 0);
+
+AudioConnection c30(NoiseGatesObj[0], 0, mixer_1a4,  0);
+AudioConnection c31(NoiseGatesObj[1], 0, mixer_1a4,  1);
+AudioConnection c32(NoiseGatesObj[2], 0, mixer_1a4,  2);
+AudioConnection c33(NoiseGatesObj[3], 0, mixer_1a4,  3);
+AudioConnection c34(NoiseGatesObj[4], 0, mixer_5et6, 0);
+AudioConnection c35(NoiseGatesObj[5], 0, mixer_5et6, 1);
 #else
 AudioConnection  c6(BypassObj[0],  0, mixer_1a4,  0);
 AudioConnection  c7(BypassObj[1],  0, mixer_1a4,  1);
@@ -141,6 +149,7 @@ void setup()
     DelaysObj[i].setEnabled(false);
     DistosObj[i].setEnabled(false);
     TremolosObj[i].setEnabled(false);  
+    NoiseGatesObj[i].setEnabled(false);
 #endif
     BypassObj[i].setStringIndex(i);
 
@@ -162,6 +171,10 @@ void setup()
     TremolosObj[i].setRate(5.0f);
     TremolosObj[i].setWaveform(0);
     TremolosObj[i].setVolume(1.0f);
+    
+    NoiseGatesObj[i].setThreshold(0.01f);
+    NoiseGatesObj[i].setAttack(1.0f);
+    NoiseGatesObj[i].setRelease(50.0f);
   }
 #endif
 

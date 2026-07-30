@@ -5,6 +5,7 @@
 #include "../EffetDelay/Delay.h"
 #include "../EffetDisto/Disto.h"
 #include "../EffetTremolo/Tremolo.h"
+#include "../EffetNoiseGate/NoiseGate.h"
 #include "Utils.h"
 
 #if Osc || OscCodec
@@ -34,4 +35,5 @@ extern OctaverEffect            OctaverObj[6];
 extern DelayEffect              DelaysObj[6];
 extern DistoEffect              DistosObj[6];
 extern TremoloEffect            TremolosObj[6];
+extern NoiseGateEffect          NoiseGatesObj[6];
 extern BypassEffect             BypassObj[6];
