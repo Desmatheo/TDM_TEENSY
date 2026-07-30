@@ -1,0 +1,13 @@
+Pressets interessants : 
+Alligner Delay et tremolo + octaver : 
+Delay : 
+Manual; Delay 1000ms; FeedBack 70%; Vol 10; Mix 70%
+Tremolo : 
+Mix : 70%; Depth 60%; Rate 1Hz; Wave Square
+Octaver : 
+Mix : 70%; Down1
+
+Leger déphasage entre les boucle, sonne tres spacial et "industriel". L'octave up Sonne aussi tres bien, voire mieux !!
+
+
+
