@@ -263,28 +263,28 @@ void DistoEffect::update() {
         // Reduce signal amplitude before clipping
         distorted = distorted * 0.5f;
 
-        if (oversamp) {
-            // Prepare signal for oversampling
-            std::vector<float> monoInput = {distorted};
-            std::vector<float> oversampledInput = upsample(monoInput, overFactor, samplerate);
+        // if (false) {
+        //     // Prepare signal for oversampling
+        //     std::vector<float> monoInput = {distorted};
+        //     std::vector<float> oversampledInput = upsample(monoInput, overFactor, samplerate);
 
-            // Apply gain and distortion processing
-            for (float &sample : oversampledInput) {
-                processDistortion(sample, computed_gain, effect_mode, intensity);
+        //     // Apply gain and distortion processing
+        //     for (float &sample : oversampledInput) {
+        //         processDistortion(sample, computed_gain, effect_mode, intensity);
 
-                // Post-filter: Low-pass to smooth out harsh high frequencies
-                sample = postFilter(sample);
-            }
+        //         // Post-filter: Low-pass to smooth out harsh high frequencies
+        //         sample = postFilter(sample);
+        //     }
 
-            // Downsample back to original sample rate
-            const std::vector<float> downsampledOutput = downsample(oversampledInput, overFactor);
-            distorted = downsampledOutput[0];
-        } else {
+        //     // Downsample back to original sample rate
+        //     const std::vector<float> downsampledOutput = downsample(oversampledInput, overFactor);
+        //     distorted = downsampledOutput[0];
+        // } else {
             processDistortion(distorted, computed_gain, effect_mode, intensity);
 
             // Post-filter: Low-pass to smooth out harsh high frequencies
             distorted = postFilter(distorted);
-        }
+        // }
 
         // Normalize the volume between the types of distortion
         normalizeVolume(distorted, effect_mode);
