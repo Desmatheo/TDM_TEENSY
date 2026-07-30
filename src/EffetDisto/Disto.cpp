@@ -52,7 +52,9 @@ float DistoEffect::diodeClipping(float input, float threshold) {
     return input;
 }
 
-float DistoEffect::softClipping(float input, float gainVal) { return std::tanh(input * gainVal); }
+float DistoEffect::softClipping(float input, float gainVal) { 
+    return std::tanh(input * gainVal); 
+}
 
 float DistoEffect::fuzzEffect(float input, float intensityVal) {
     // Symmetrical clipping with extreme compression
@@ -84,7 +86,7 @@ float DistoEffect::multiStage(float sample, float drive, float intensityVal) {
 }
 
 float DistoEffect::testDistortion(float input, float gainVal){
-    float g = input * gainVal;
+    float g = input * gainVal; 
     
 #define Qlib 1
 
@@ -178,14 +180,19 @@ void DistoEffect::processDistortion(float &sample,           // Sample to proces
         sample = tubeSaturation(sample, 1.0f + intensityVal * 9.0f);
         break;
     case 4: // Multi-stage
-        // sample = multiStage(sample, 1.0f, 1.0f + intensityVal * 9.0f);
-        sample = testDistortion(sample, gainVal);
+        sample = multiStage(sample, 1.0f, 1.0f + intensityVal * 9.0f);
         break;
     case 5: // Diode Clipping
         {
             float threshold = 1.0f - intensityVal * 0.9f;
             sample = diodeClipping(sample, threshold) / threshold;
         }
+        break;
+    case 6 : 
+        sample = testDistortion(sample, gainVal);
+        break;
+    case 7 : 
+        sample = testOverDrive(sample);
         break;
     }
 }
@@ -336,13 +343,16 @@ void DistoEffect::setParameter(int param_id, float value) {
             setGain(value);
             break;
         case 2 :  
-            if (value >= 0.897f) setDistoMode(5);      // Autour de MIDI 127
-            else if (value >= 0.696f) setDistoMode(4); // Autour de MIDI 101
-            else if (value >= 0.496f) setDistoMode(3); // Autour de MIDI 76
-            else if (value >= 0.295f) setDistoMode(2); // Autour de MIDI 50
-            else if (value >= 0.098f) setDistoMode(1); // Autour de MIDI 25
-            else setDistoMode(0);                      // Autour de MIDI 0
-            break; 
+            // Les seuils (thresholds) correspondent aux bascules exactes entre les crans sur le GUI
+            if (value >= 0.929f)      setDistoMode(7); // Mode 8 (Test OD)   - MIDI 118 à 127
+            else if (value >= 0.786f) setDistoMode(6); // Mode 7 (Test)      - MIDI 100 à 117
+            else if (value >= 0.643f) setDistoMode(5); // Mode 6 (Diode)     - MIDI 82 à 99
+            else if (value >= 0.500f) setDistoMode(4); // Mode 5 (Multi)     - MIDI 64 à 81
+            else if (value >= 0.357f) setDistoMode(3); // Mode 4 (Tube)      - MIDI 46 à 63
+            else if (value >= 0.214f) setDistoMode(2); // Mode 3 (Fuzz)      - MIDI 28 à 45
+            else if (value >= 0.071f) setDistoMode(1); // Mode 2 (Soft Clip) - MIDI 10 à 27
+            else                      setDistoMode(0); // Mode 1 (Hard Clip) - MIDI 0 à 9
+            break;
         case 3 : 
             setTone(value);
             break;
