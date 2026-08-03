@@ -73,15 +73,17 @@ float DistoEffect::softClipping(float input, float gainVal) {
 }
 
 float DistoEffect::fuzzEffect(float input, float intensityVal) {
-    // Fuzz faces are often heavily asymmetrical
-    float driven = input * (1.0f + intensityVal * 20.0f); // Massive gain
-    
-    if (driven > 0.0f) {
-        return fast_tanh(driven);
-    } else {
-        // Hard clip the negative side for strong even harmonics
-        return std::clamp(driven, -1.0f, 0.0f);
-    }
+    // Symmetrical clipping with extreme compression
+    float fuzzed = softClipping(input, intensity);
+
+    // Introduce a slight asymmetry for a classic fuzz character and adds harmonic content
+    fuzzed += 0.05f * std::sin(input * 20.0f);
+
+    // Dynamic response: Adjust the intensity based on the input signal's amplitude
+    const float dynamicIntensity = intensity * (1.0f + 0.5f * std::abs(input));
+    fuzzed = softClipping(fuzzed, dynamicIntensity);
+
+    return fuzzed;
 }
 
 float DistoEffect::tubeSaturation(float input, float gainVal) { 
@@ -90,11 +92,16 @@ float DistoEffect::tubeSaturation(float input, float gainVal) {
 }
 
 float DistoEffect::multiStage(float sample, float drive, float intensityVal) {
-    // Stage 1: Soft clip
-    float s1 = fast_tanh(sample * drive);
-    // Stage 2: Boost and soft clip again
-    float s2 = fast_tanh(s1 * (1.0f + intensityVal * 5.0f));
-    return s2;
+    // First stage
+    const float stage1 = softClipping(sample, drive * intensity * 2.0f);
+
+    // Second stage
+    const float stage2 = softClipping(stage1, drive * intensity);
+
+    // Power amp, mimic second tube clipping, possibly negative feedback
+    const float result = tubeSaturation(stage2, drive * intensity);
+
+    return result;
 }
 
 float DistoEffect::testDistortion(float input, float gainVal){
@@ -104,11 +111,22 @@ float DistoEffect::testDistortion(float input, float gainVal){
 }
 
 float DistoEffect::testOverDrive(float input){
-    // Standard cubic soft clipper (mathematically continuous without glitches)
-    // f(x) = x - x^3/3 for -1 < x < 1
-    if (input >= 1.0f) return 0.666666f;
-    if (input <= -1.0f) return -0.666666f;
-    return input - (input * input * input) / 3.0f;
+    float threshold = 1.0f - intensity;
+    if (threshold < 0.0001f) threshold = 0.0001f;
+    
+    float abs_input = std::abs(input);
+    float sign = (input > 0.0f) ? 1.0f : ((input < 0.0f) ? -1.0f : 0.0f);
+ 
+    if(abs_input < threshold){
+        return 2.0f * input;
+    }
+    else if (abs_input > 2.0f * threshold){
+        return sign * 1.0f;
+    }
+    else {
+        float tmp = 2.0f - abs_input * 3.0f;
+        return sign * ((3.0f - tmp * tmp) / 3.0f);      
+    }
 }
 
 float DistoEffect::testFuzz(float input, float gainVal){
