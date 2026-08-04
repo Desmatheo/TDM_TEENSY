@@ -40,7 +40,15 @@ AudioConnection c4(tdm_codec_in,  2, BypassObj[4], 0);
 AudioConnection c5(tdm_codec_in,  0, BypassObj[5], 0);
 #endif
 
-#if UtilEffet
+// Bypass (routeur) → Mixer directement
+#if UtilBypassRoutage
+AudioConnection  c6(BypassObj[0], 0, mixer_1a4,  0);
+AudioConnection  c7(BypassObj[1], 0, mixer_1a4,  1);
+AudioConnection  c8(BypassObj[2], 0, mixer_1a4,  2);
+AudioConnection  c9(BypassObj[3], 0, mixer_1a4,  3);
+AudioConnection c10(BypassObj[4], 0, mixer_5et6, 0);
+AudioConnection c11(BypassObj[5], 0, mixer_5et6, 1);
+#else
 AudioConnection  c6(BypassObj[0], 0, DistosObj[0], 0);
 AudioConnection  c7(BypassObj[1], 0, DistosObj[1], 0);
 AudioConnection  c8(BypassObj[2], 0, DistosObj[2], 0);
@@ -82,13 +90,6 @@ AudioConnection c32(NoiseGatesObj[2], 0, mixer_1a4,  2);
 AudioConnection c33(NoiseGatesObj[3], 0, mixer_1a4,  3);
 AudioConnection c34(NoiseGatesObj[4], 0, mixer_5et6, 0);
 AudioConnection c35(NoiseGatesObj[5], 0, mixer_5et6, 1);
-#else
-AudioConnection  c6(BypassObj[0],  0, mixer_1a4,  0);
-AudioConnection  c7(BypassObj[1],  0, mixer_1a4,  1);
-AudioConnection  c8(BypassObj[2],  0, mixer_1a4,  2);
-AudioConnection  c9(BypassObj[3],  0, mixer_1a4,  3);
-AudioConnection c10(BypassObj[4],  0, mixer_5et6, 0);
-AudioConnection c11(BypassObj[5],  0, mixer_5et6, 1);
 #endif
 
 AudioConnection mast1(mixer_1a4 , 0, master, 0);
@@ -152,6 +153,11 @@ void setup()
     NoiseGatesObj[i].setEnabled(false);
 #endif
     BypassObj[i].setStringIndex(i);
+    BypassObj[i].setEffect(BypassEffect::DISTO,     &DistosObj[i]);
+    BypassObj[i].setEffect(BypassEffect::OCTAVER,   &OctaverObj[i]);
+    BypassObj[i].setEffect(BypassEffect::TREMOLO,   &TremolosObj[i]);
+    BypassObj[i].setEffect(BypassEffect::DELAY,     &DelaysObj[i]);
+    BypassObj[i].setEffect(BypassEffect::NOISEGATE, &NoiseGatesObj[i]);
 
     OctaverObj[i].setMix(0.7f);
     OctaverObj[i].setVolume(1.0f);

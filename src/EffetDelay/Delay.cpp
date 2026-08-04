@@ -1,7 +1,5 @@
 #include "Delay.h"
 
-// ------ Partie TEENSY -------
-
 void DelayEffect::DelayChannel::Init(float sampleRate, uint32_t max_delay_samples) {
     buf_len = max_delay_samples;
     
@@ -110,7 +108,11 @@ float DelayEffect::DelayChannel::Process(float in) {
     return read;
 }
 
-DelayEffect::DelayEffect() : AudioStream(1, inputQueueArray_) {
+DelayEffect::DelayEffect() 
+#if !UtilBypassRoutage
+: AudioStream(1, inputQueueArray_) 
+#endif
+{
     setMix(0.5f);
     setDelayTime(0.5f);
     setFeedback(0.7f);
@@ -126,11 +128,16 @@ bool DelayEffect::begin() {
     return (delay.buffer != nullptr);
 }
 
+// Utilisation si le chainage se fait via le bypass
+#if !TEENSY
+void DelayEffect::update(const float** in, float** out, int idx) {
+#else
+#if !UtilBypassRoutage
 void DelayEffect::update() {
     audio_block_t* in = receiveReadOnly(0);
     if (!in) return;
     
-    if (!active || !delay.buffer) {
+    if (!active_ || !delay.buffer) {
         transmit(in, 0);
         release(in);
         return;
@@ -160,6 +167,22 @@ void DelayEffect::update() {
     release(out);
     release(in);
 }
+#else
+void DelayEffect::update(float* buffer, int numSamples) {
+    if (!active_ || !delay.buffer) return;
+
+    for (int i = 0; i < numSamples; i++) {
+        float input = buffer[i];
+        float delay_out = delay.Process(input);
+        float output = ((input * dryMix) + (delay_out * wetMix)) * volume;
+
+        if (output > 1.0f) output = 1.0f;
+        if (output < -1.0f) output = -1.0f;
+        buffer[i] = output;
+    }
+}
+#endif
+#endif
 
 void DelayEffect::setMix(float mix) {
     wetMix = clampf(mix, 0.0f, 1.0f);

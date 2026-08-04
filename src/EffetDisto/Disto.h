@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../includes/Utils.h"
+#include "../includes/Effect.h"
 
 #include <Arduino.h>
 #include "AudioStream.h"
@@ -10,7 +11,13 @@
 
 #include "../includes/toneDaisySP/tone.h"
 
-class DistoEffect : public AudioStream {
+class DistoEffect 
+#if !UtilBypassRoutage
+: public AudioStream 
+#else 
+: public Effect
+#endif
+{
 
     public:
 
@@ -45,7 +52,15 @@ class DistoEffect : public AudioStream {
 
     DistoEffect(float sampleRate = AUDIO_SAMPLE_RATE_EXACT); 
 
+#if !TEENSY
+    virtual void update(const float** in, float** out, int idx) override;
+#else
+#if !UtilBypassRoutage
     virtual void update() override;
+#else 
+    virtual void update(float* buffer, int numSamples) override;
+#endif
+#endif
 
     void setGain(float gain);               // param_id 1
     void setDistoMode(int mode);            // param_id 2
@@ -60,14 +75,12 @@ class DistoEffect : public AudioStream {
 
     void setParameter(int param_id, float value);
 
-    // --- METHODES ET VARIABLES PARTAGEES ---
-    void setEnabled(bool e) { active = e; }
-    bool isEnabled() const  { return active; }
-
 private:
-    bool active = false; // effet actif ou non
+#if !UtilBypassRoutage
     audio_block_t* inputQueueArray_[1];
+#endif
     float anti_denormal = 1e-9f;
+
 
     // Helper functions for distortion and clipping
     float hardClipping(float input, float threshold);

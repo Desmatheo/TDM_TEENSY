@@ -1,6 +1,10 @@
 #include "NoiseGate.h"
 
-NoiseGateEffect::NoiseGateEffect() : AudioStream(1, inputQueueArray_) {
+NoiseGateEffect::NoiseGateEffect()
+#if !UtilBypassRoutage
+: AudioStream(1, inputQueueArray_) 
+#endif
+{
     setAttack(1.0f);
     setRelease(50.0f);
     setThreshold(0.01f);
@@ -45,12 +49,14 @@ void NoiseGateEffect::setParameter(int param_id, float value) {
             break;
     }
 }
-
+#if !TEENSY
+#else
+#if !UtilBypassRoutage
 void NoiseGateEffect::update() {
     audio_block_t* in = receiveReadOnly(0);
     if (!in) return;
     
-    if (!active) {
+    if (!active_) {
         transmit(in, 0);
         release(in);
         return;
@@ -92,3 +98,33 @@ void NoiseGateEffect::update() {
     release(out);
     release(in);
 }
+#else
+void NoiseGateEffect::update(float* buffer, int numSamples) {
+    if (!active_) return;
+
+    for (int i = 0; i < numSamples; i++) {
+        float sample = buffer[i];
+        float absSample = fabsf(sample);
+
+        // Simple envelope follower
+        if (absSample > envelope_) {
+            envelope_ = attackCoef_ * envelope_ + (1.0f - attackCoef_) * absSample;
+        } else {
+            envelope_ = releaseCoef_ * envelope_ + (1.0f - releaseCoef_) * absSample;
+        }
+
+        // Target gain based on threshold
+        float targetGain = (envelope_ > threshold_) ? 1.0f : 0.0f;
+
+        // Smooth gain transition to avoid clicks
+        if (targetGain > gain_) {
+            gain_ = attackCoef_ * gain_ + (1.0f - attackCoef_) * targetGain;
+        } else {
+            gain_ = releaseCoef_ * gain_ + (1.0f - releaseCoef_) * targetGain;
+        }
+
+        buffer[i] = sample * gain_;
+    }
+}
+#endif 
+#endif

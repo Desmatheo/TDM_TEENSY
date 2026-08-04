@@ -1,9 +1,12 @@
 #pragma once
 
 #include "../includes/Utils.h"
+#include "../includes/Effect.h"
 
+#if TEENSY
 #include <Arduino.h>
 #include "AudioStream.h"
+#endif
 
 #include "Util/Multirate.h"
 #include "Util/OctaveGenerator.h"
@@ -18,7 +21,13 @@ using namespace daisy;
 using namespace daisysp;
 #endif
 
-class OctaverEffect : public AudioStream {
+class OctaverEffect
+#if !UtilBypassRoutage
+: public AudioStream 
+#else 
+: public Effect
+#endif
+{
     public:
 
     float dryMix;
@@ -46,7 +55,15 @@ class OctaverEffect : public AudioStream {
     bool bypass = false;
 
     OctaverEffect(); 
+#if !TEENSY
+    virtual void update(const float** in, float** out, int idx) override;
+#else
+#if !UtilBypassRoutage
     virtual void update() override;
+#else 
+    virtual void update(float* buffer, int numSamples) override;
+#endif
+#endif
 
     void setMix(float mix);                // Ctrl 2 (0.0 -> 1.0)
     void setVolume(float vol);             // Ctrl 1 (0.0 -> 1.0
@@ -55,12 +72,8 @@ class OctaverEffect : public AudioStream {
 
     void setParameter(int param_id, float value);
 
-    // --- METHODES ET VARIABLES PARTAGEES ---
-    void setEnabled(bool e) { active = e; }
-    bool isEnabled() const  { return active; }
-
 private:
-    bool active = false; // effet actif ou non
-    
+#if !UtilBypassRoutage
     audio_block_t* inputQueueArray_[1];
+#endif
 };

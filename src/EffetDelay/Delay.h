@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../includes/Utils.h"
+#include "../includes/Effect.h"
 
 #include <Arduino.h>
 #include "AudioStream.h"
@@ -8,7 +9,13 @@
 
 
  
-class DelayEffect : public AudioStream{
+class DelayEffect 
+#if !UtilBypassRoutage
+: public AudioStream
+#else
+: public Effect
+#endif
+{
 public:
 
     static constexpr size_t MAX_DELAY = static_cast<size_t>(44100 * 4.0f);
@@ -46,7 +53,7 @@ public:
         float currentDelay = 0.0f;
         float delayTarget = 0.0f;
         float feedback = 0.0f;
-        bool active = false;
+        bool active = true;
 
         void Init(float sampleRate, uint32_t max_delay_samples);
         void Free();
@@ -60,12 +67,15 @@ public:
     ~DelayEffect();
     bool begin();
 
+#if !TEENSY
+    virtual void update(const float** in, float** out, int idx) override;
+#else
+#if !UtilBypassRoutage
     virtual void update() override;
-
-    // ON/OFF soft
-    void setEnabled(bool e) { active = e; }
-    bool isEnabled() const { return active; }
-
+#else 
+    virtual void update(float* buffer, int numSamples) override;
+#endif
+#endif
 
     // Setters pour personnalisation
     void setMix(float mix);
@@ -81,6 +91,7 @@ public:
 
     void setParameter(int param_id, float value);
 private:
-    bool active = false;
+#if !UtilBypassRoutage
     audio_block_t* inputQueueArray_[1];
+#endif
 };

@@ -14,8 +14,10 @@ using namespace daisysp;
 
 
 
-OctaverEffect::OctaverEffect()
-    : AudioStream(1, inputQueueArray_),
+OctaverEffect::OctaverEffect() :
+#if !UtilBypassRoutage
+    AudioStream(1, inputQueueArray_),
+#endif
       octave(AUDIO_SAMPLE_RATE_EXACT / resample_factor)
 #if eq_ON
       , eq1(-11, 140_Hz, sampleRate),
@@ -32,13 +34,16 @@ OctaverEffect::OctaverEffect()
 
 }
 
+#if !TEENSY
+#else 
+#if !UtilBypassRoutage
 void OctaverEffect::update() {
 
     audio_block_t* in = receiveReadOnly(0);
     if (!in) return;
 
     // Pour éviter de faire le gros calcul DSP quand l'effet n'est pas actif, bypass complet
-    if (!active) {
+    if (!active_) {
         transmit(in, 0);
         release(in);
         return;
@@ -98,6 +103,50 @@ void OctaverEffect::update() {
     release(out);
     release(in);
 }
+#else 
+void OctaverEffect::update(float* buffer, int numSamples) {
+    if (!active_) return;
+
+    for (int i = 0; i < numSamples; i++) {
+        float inputL = buffer[i];
+        inputL += 1e-9f; // Anti-denormal
+
+        buff[bin_counter] = inputL;
+
+        if (bin_counter > 4) {
+            std::span<const float, resample_factor> in_chunk(&(buff[0]), resample_factor);
+            const auto sample = decimate2(in_chunk);
+
+            float octave_mix = 0.0f;
+            octave.update(sample, effect_mode);
+
+            if (effect_mode == 1) octave_mix += octave.up1()    * 6.0f;
+            if (effect_mode == 2) octave_mix += octave.down1()  * 6.0f;
+            if (effect_mode == 3) octave_mix += octave.down2()  * 6.0f;
+
+            auto out_chunk = interpolate(octave_mix);
+            for (size_t j = 0; j < out_chunk.size(); ++j) {
+#if eq_ON
+                buff_out[j] = eq2(eq1(out_chunk[j]));
+#else
+                buff_out[j] = out_chunk[j];
+#endif
+            }
+        }
+
+        bin_counter += 1;
+        if (bin_counter > 5) bin_counter = 0;
+
+        float octave_signal = buff_out[bin_counter];
+        float output = ((inputL * dryMix) + (octave_signal * wetMix)) * volume;
+
+        if (output > 1.0f) output = 1.0f;
+        if (output < -1.0f) output = -1.0f;
+        buffer[i] = output;
+    }
+}
+#endif 
+#endif
 
 // --- Implémentation des Setters Spécifiques ---
 

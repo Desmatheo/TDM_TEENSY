@@ -1,18 +1,32 @@
 #pragma once
 
 #include "../includes/Utils.h"
+#include "../includes/Effect.h"
 #include <Arduino.h>
 #include "AudioStream.h"
 
-class NoiseGateEffect : public AudioStream {
+class NoiseGateEffect 
+#if !UtilBypassRoutage
+: public AudioStream 
+#else
+: public Effect
+#endif
+{
 public:
     NoiseGateEffect();
     ~NoiseGateEffect() = default;
 
+#if !TEENSY
+    virtual void update(const float** in, float** out, int idx) override;
+#else
+#if !UtilBypassRoutage
     virtual void update() override;
+#else
+    virtual void update(float* buffer, int numSamples) override;
+#endif
+#endif
 
-    void setEnabled(bool e) { active = e; }
-    bool isEnabled() const { return active; }
+
 
     void setThreshold(float threshold); 
     void setAttack(float attackMs);
@@ -20,8 +34,9 @@ public:
     void setParameter(int param_id, float value);
 
 private:
-    bool active = false;
+#if !UtilBypassRoutage
     audio_block_t* inputQueueArray_[1];
+#endif
 
     float threshold_ = 0.01f;
     float attackMs_ = 1.0f;

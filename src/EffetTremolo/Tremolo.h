@@ -1,14 +1,33 @@
 #pragma once
+
+#include "../includes/Utils.h"
+#include "../includes/Effect.h"
+
 #include <Arduino.h>
 #include "AudioStream.h"
 #include "arm_math.h"
  
-class TremoloEffect : public AudioStream {
+class TremoloEffect 
+#if !UtilBypassRoutage
+: public AudioStream 
+#else 
+: public Effect
+#endif
+{
 public:
     TremoloEffect();
+
+#if !TEENSY
+    virtual void update(const float** in, float** out, int idx) override;
+#else
+#if !UtilBypassRoutage
     virtual void update() override;
+#else
+    virtual void update(float* buffer, int numSamples) override;
+#endif
+#endif
  
-    void setEnabled(bool state);
+ 
     void setMix(float mix);
     void setDepth(float depth);
     void setRate(float rate_hz);
@@ -17,7 +36,6 @@ public:
     void setParameter(int param_id, float value);
  
 private:
-    bool enabled;
     float wetMix;
     float dryMix;
     float depth;
@@ -28,5 +46,7 @@ private:
     float phase;
     float phaseIncrement;
  
+#if !UtilBypassRoutage
     audio_block_t* inputQueueArray_[2];
+#endif
 };

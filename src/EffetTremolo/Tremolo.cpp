@@ -1,7 +1,11 @@
 #include "Tremolo.h"
  
-TremoloEffect::TremoloEffect() : AudioStream(2, inputQueueArray_) {
-    enabled = false;
+TremoloEffect::TremoloEffect() 
+#if !UtilBypassRoutage
+    : AudioStream(2, inputQueueArray_) 
+#endif
+{
+    active_ = true;
     setMix(1.0f);
     setDepth(0.5f);
     setRate(10.0f);
@@ -10,9 +14,7 @@ TremoloEffect::TremoloEffect() : AudioStream(2, inputQueueArray_) {
     phase = 0.0f;
 }
  
-void TremoloEffect::setEnabled(bool state) {
-    enabled = state;
-}
+
  
 void TremoloEffect::setMix(float mix) {
     float clamped = mix;
@@ -61,13 +63,17 @@ void TremoloEffect::setParameter(int param_id, float value) {
     }
 }
  
+
+#if !TEENSY
+#else
+#if !UtilBypassRoutage
 void TremoloEffect::update() {
     audio_block_t* inL = receiveReadOnly(0);
     audio_block_t* inR = receiveReadOnly(1);
  
     if (!inL && !inR) return;
  
-    if (!enabled) {
+    if (!active_) {
         // Just pass through if disabled
         if (inL) transmit(inL, 0);
         if (inR) transmit(inR, 1);
@@ -137,3 +143,42 @@ void TremoloEffect::update() {
     if (inL) release(inL);
     if (inR) release(inR);
 }
+
+#else
+void TremoloEffect::update(float* buffer, int numSamples) {
+    if (!active_) return;
+
+    for (int i = 0; i < numSamples; i++) {
+        float inputL = buffer[i];
+
+        phase += phaseIncrement;
+        if (phase >= 1.0f) phase -= 1.0f;
+
+        float lfoValue = 0.0f;
+        switch (waveform) {
+            case 0: // Sine
+                lfoValue = (sinf(phase * 2.0f * PI) + 1.0f) * 0.5f;
+                break;
+            case 1: // Tri
+                if (phase < 0.5f) lfoValue = phase * 2.0f;
+                else lfoValue = 2.0f - (phase * 2.0f);
+                break;
+            case 2: // Square
+                lfoValue = (phase < 0.5f) ? 1.0f : 0.0f;
+                break;
+            case 3: // Saw
+                lfoValue = phase;
+                break;
+        }
+
+        float mod = (1.0f - depth) + (lfoValue * depth);
+        float processedL = inputL * mod;
+        float finalL = (inputL * dryMix + processedL * wetMix) * volume;
+
+        if (finalL > 0.999f) finalL = 0.999f;
+        if (finalL < -0.999f) finalL = -0.999f;
+        buffer[i] = finalL;
+    }
+}
+#endif
+#endif

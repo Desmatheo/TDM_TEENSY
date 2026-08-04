@@ -20,8 +20,10 @@ inline float fast_atan(float x) {
 }
 
 
-DistoEffect::DistoEffect(float sampleRate)
-    : AudioStream(1, inputQueueArray_),
+DistoEffect::DistoEffect(float sampleRate) :
+#if !UtilBypassRoutage
+      AudioStream(1, inputQueueArray_),
+#endif
       preFilter(preFilterCutoffBase, sampleRate),
       postFilter(postFilterCutoff, sampleRate),
       upsamplingLowpassFilter(0.0f, sampleRate)
@@ -62,9 +64,9 @@ float DistoEffect::hardClipping(float input, float threshold) {
 float DistoEffect::diodeClipping(float input, float threshold) {
     // Soft exponential knee mimicking a diode curve
     if (input > threshold)
-        return threshold + (1.0f - expf(-(input - threshold)));
+        return threshold + (1.0f - fastexp(-(input - threshold)));
     else if (input < -threshold)
-        return -threshold - (1.0f - expf(input + threshold));
+        return -threshold - (1.0f - fastexp(input + threshold));
     return input;
 }
 
@@ -107,7 +109,7 @@ float DistoEffect::multiStage(float sample, float drive, float intensityVal) {
 float DistoEffect::testDistortion(float input, float gainVal){
     float g = input * gainVal;
     float sign = (g < 0.0f) ? -1.0f : 1.0f;
-    return sign * (1.0f - expf(-std::abs(g)));
+    return sign * (1.0f - fastexp(-std::abs(g)));
 }
 
 float DistoEffect::testOverDrive(float input){
@@ -178,10 +180,10 @@ void DistoEffect::processDistortion(float &sample,           // Sample to proces
         sample = softClipping(sample, gainVal * (1.0f + intensityVal * 4.0f));
         break;
     case 2: // Fuzz
-        sample = fuzzEffect(sample * gainVal, intensityVal);
+        sample = fuzzEffect(sample * gainVal, intensityVal * 10.0f);
         break;
     case 3: // Tube Saturation
-        sample = tubeSaturation(sample, gainVal * (1.0f + intensityVal * 4.0f));
+        sample = tubeSaturation(sample, gainVal * (1.0f + intensityVal * 10.0f));
         break;
     case 4: // Multi-stage
         sample = multiStage(sample, gainVal, intensityVal);
@@ -247,11 +249,54 @@ float DistoEffect::ProcessTiltToneControl(float input) {
     return lp * (1.f - toneAmount) + hp * toneAmount;
 }
 
+// Utilisation si l'effet est utilisé dans le chainage
+#if !TEENSY
+void DistoEffect::update(const float** in, float** out, int idx) {
+    float inputL;
+    float inputR;
+
+    // Bruit de Nyquist (alterné) : +1e-9f, -1e-9f, +1e-9f...
+    // Contrairement au courant continu (DC), ce bruit traverse le filtre passe-haut (preFilter)
+    // et empêche tous les filtres suivants (postFilter) de crasher sur des nombres sous-normaux.
+    anti_denormal = -anti_denormal;
+
+    inputL = inputR = in[0][idx] + anti_denormal;
+
+    float distorted = inputL;
+
+    // Apply high-pass filter to remove excessive low frequencies
+    // (preFilter cutoff is now fixed in InitializeFilters to prevent audio-rate modulation crash)
+    distorted = preFilter(distorted);
+
+
+    const float computed_gain = min_gain + (this->gain * (max_gain - min_gain));
+
+    // Reduce signal amplitude before clipping
+    distorted = distorted * 0.5f;
+
+
+    processDistortion(distorted, computed_gain, effect_mode, intensity);
+
+    // Post-filter: Low-pass to smooth out harsh high frequencies
+    distorted = postFilter(distorted);
+
+    // Normalize the volume between the types of distortion
+    normalizeVolume(distorted, effect_mode);
+
+    // Apply tilt-tone filter
+    const float effect_output = ProcessTiltToneControl(distorted);
+
+    // Mixage final dry/wet pour cet effet de corde
+    out[0][idx] = (inputL * dryMix + effect_output * wetMix) * volume;
+    out[1][idx] = out[0][idx];
+}
+#else
+#if !UtilBypassRoutage
 void DistoEffect::update() {
     audio_block_t* in = receiveReadOnly(0);
     if (!in) return;
 
-    if (!active) {
+    if (!active_) {
         transmit(in, 0);
         release(in);
         return;
@@ -304,6 +349,49 @@ void DistoEffect::update() {
     release(in);
 }
 
+#else
+// Utilisation si l'effet est dans le bypass
+void DistoEffect::update(float* buffer, int numSamples) {
+    if (!active_) return;
+
+    for (int i = 0; i < numSamples; i++) {
+        float inputL = buffer[i];
+
+        anti_denormal = -anti_denormal;
+        inputL += anti_denormal;
+
+        float distorted = inputL;
+
+        // Apply high-pass filter to remove excessive low frequencies
+        distorted = preFilter(distorted);
+
+        const float computed_gain = min_gain + (this->gain * (max_gain - min_gain));
+
+        // Reduce signal amplitude before clipping
+        distorted = distorted * 0.5f;
+
+        processDistortion(distorted, computed_gain, effect_mode, intensity);
+
+        // Post-filter: Low-pass to smooth out harsh high frequencies
+        distorted = postFilter(distorted);
+
+        // Normalize the volume between the types of distortion
+        normalizeVolume(distorted, effect_mode);
+
+        // Apply tilt-tone filter
+        const float effect_output = ProcessTiltToneControl(distorted);
+
+        // Signal 100% effet
+        float output = effect_output * volume;
+
+        if (output > 1.0f) output = 1.0f;
+        if (output < -1.0f) output = -1.0f;
+        buffer[i] = output;
+    }
+}
+#endif
+#endif
+
 // --- Implémentation des Setters Spécifiques ---
 
 void DistoEffect::setGain(float val) {
@@ -340,16 +428,15 @@ void DistoEffect::setParameter(int param_id, float value) {
         case 1 : 
             setGain(value);
             break;
-        case 2 :  
-            // Les seuils (thresholds) correspondent aux bascules exactes entre les crans sur le GUI
-            if (value >= 0.929f)      setDistoMode(7); // Mode 8 (Test OD)   - MIDI 118 à 127
-            else if (value >= 0.786f) setDistoMode(6); // Mode 7 (Test)      - MIDI 100 à 117
-            else if (value >= 0.643f) setDistoMode(5); // Mode 6 (Diode)     - MIDI 82 à 99
-            else if (value >= 0.500f) setDistoMode(4); // Mode 5 (Multi)     - MIDI 64 à 81
-            else if (value >= 0.357f) setDistoMode(3); // Mode 4 (Tube)      - MIDI 46 à 63
-            else if (value >= 0.214f) setDistoMode(2); // Mode 3 (Fuzz)      - MIDI 28 à 45
-            else if (value >= 0.071f) setDistoMode(1); // Mode 2 (Soft Clip) - MIDI 10 à 27
-            else                      setDistoMode(0); // Mode 1 (Hard Clip) - MIDI 0 à 9
+        case 2 :   
+            if (value < 0.125f) setDistoMode(0);
+            else if (value < 0.25f) setDistoMode(1);
+            else if (value < 0.375f) setDistoMode(2);
+            else if (value < 0.5f) setDistoMode(3);
+            else if (value < 0.625f) setDistoMode(4);
+            else if (value < 0.75f) setDistoMode(5);
+            else if (value < 0.875f) setDistoMode(6);
+            else setDistoMode(7);
             break;
         case 3 : 
             setTone(value);
