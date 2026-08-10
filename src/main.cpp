@@ -9,6 +9,7 @@ OctaverEffect            OctaverObj[6];
 DistoEffect              DistosObj[6];
 TremoloEffect            TremolosObj[6]; 
 NoiseGateEffect          NoiseGatesObj[6];
+EqualizerEffect          EqualizersObj[6];
 #endif
 BypassEffect             BypassObj[6];
 
@@ -41,6 +42,7 @@ AudioConnection c5(tdm_codec_in,  0, BypassObj[5], 0);
 #endif
 
 // Bypass (routeur) → Mixer directement
+#if UtilEffet
 #if UtilBypassRoutage
 AudioConnection  c6(BypassObj[0], 0, mixer_1a4,  0);
 AudioConnection  c7(BypassObj[1], 0, mixer_1a4,  1);
@@ -91,6 +93,7 @@ AudioConnection c33(NoiseGatesObj[3], 0, mixer_1a4,  3);
 AudioConnection c34(NoiseGatesObj[4], 0, mixer_5et6, 0);
 AudioConnection c35(NoiseGatesObj[5], 0, mixer_5et6, 1);
 #endif
+#endif
 
 AudioConnection mast1(mixer_1a4 , 0, master, 0);
 AudioConnection mast2(mixer_5et6, 0, master, 1);
@@ -133,12 +136,20 @@ void setup()
 
 #if Osc || OscCodec
 // test accord sympa :)
-  osc[0].begin(0.06f, 110.00f, WAVEFORM_SINE); // 110..660 Hz
-  osc[1].begin(0.04f, 329.63f, WAVEFORM_SINE); // 110..660 Hz
-  osc[2].begin(0.06f, 440.00f, WAVEFORM_SINE); // 110..660 Hz
-  osc[3].begin(0.04f, 554.37f, WAVEFORM_SINE); // 110..660 Hz
-  osc[4].begin(0.04f, 659.26f, WAVEFORM_SINE); // 110..660 Hz
-  osc[5].begin(0.06f, 880.00f, WAVEFORM_SINE); // 110..660 Hz
+//   osc[0].begin(0.03f, 110.00f, WAVEFORM_SINE); // 110..660 Hz
+//   osc[1].begin(0.01f, 329.63f, WAVEFORM_SINE); // 110..660 Hz
+//   osc[2].begin(0.03f, 440.00f, WAVEFORM_SINE); // 110..660 Hz
+//   osc[3].begin(0.01f, 554.37f, WAVEFORM_SINE); // 110..660 Hz
+//   osc[4].begin(0.01f, 659.26f, WAVEFORM_SINE); // 110..660 Hz
+//   osc[5].begin(0.03f, 880.00f, WAVEFORM_SINE); // 110..660 Hz
+
+
+  osc[0].begin(0.01f, 80.0f, WAVEFORM_SINE); // 110..660 Hz
+  osc[1].begin(0.01f, 250.0f, WAVEFORM_SINE); // 110..660 Hz
+  osc[2].begin(0.01f, 750.0f, WAVEFORM_SINE); // 110..660 Hz
+  osc[3].begin(0.01f, 2200.00f, WAVEFORM_SINE); // 110..660 Hz
+  osc[4].begin(0.01f, 6600.00f, WAVEFORM_SINE); // 110..660 Hz
+  osc[5].begin(0.01f, 80.0f, WAVEFORM_SINE); // 110..660 Hz
 #endif
 
 #if UtilEffet
@@ -151,6 +162,7 @@ void setup()
     DistosObj[i].setEnabled(false);
     TremolosObj[i].setEnabled(false);  
     NoiseGatesObj[i].setEnabled(false);
+    EqualizersObj[i].setEnabled(false);
 #endif
     BypassObj[i].setStringIndex(i);
     BypassObj[i].setEffect(BypassEffect::DISTO,     &DistosObj[i]);
@@ -158,6 +170,7 @@ void setup()
     BypassObj[i].setEffect(BypassEffect::TREMOLO,   &TremolosObj[i]);
     BypassObj[i].setEffect(BypassEffect::DELAY,     &DelaysObj[i]);
     BypassObj[i].setEffect(BypassEffect::NOISEGATE, &NoiseGatesObj[i]);
+    BypassObj[i].setEffect(BypassEffect::EQUALIZER, &EqualizersObj[i]);
 
     OctaverObj[i].setMix(0.7f);
     OctaverObj[i].setVolume(1.0f);
@@ -173,14 +186,25 @@ void setup()
     DistosObj[i].setVolume(0.01f);
          
     TremolosObj[i].setMix(1.0f);
-    TremolosObj[i].setDepth(0.5f);
-    TremolosObj[i].setRate(5.0f);
+    TremolosObj[i].setDepth(1.0f);
     TremolosObj[i].setWaveform(0);
+    // TremolosObj[i].setPhaseOffset(0.0f);
+    TremolosObj[i].setPhaseMode(TremoloEffect::SYNC);
+    TremolosObj[i].setGlobalRate(5.0f);
+
     TremolosObj[i].setVolume(1.0f);
     
     NoiseGatesObj[i].setThreshold(0.01f);
     NoiseGatesObj[i].setAttack(1.0f);
     NoiseGatesObj[i].setRelease(50.0f);
+    
+    EqualizersObj[i].begin();
+    EqualizersObj[i].setBand(0, 0.5f); // 0dB
+    EqualizersObj[i].setBand(1, 0.5f); // 0dB
+    EqualizersObj[i].setBand(2, 0.5f); // 0dB
+    EqualizersObj[i].setBand(3, 0.5f); // 0dB
+    EqualizersObj[i].setBand(4, 0.5f); // 0dB
+    EqualizersObj[i].setVolume(1.0f);
   }
 #endif
 
@@ -217,13 +241,6 @@ void loop()
     float avgLoad = AudioProcessorUsage();
     float maxLoad = AudioProcessorUsageMax();
 
-    // Alerte Surcharge CPU sur la LED intégrée de la Teensy (LED_BUILTIN)
-    if (maxLoad > 90.0f) {
-      digitalWrite(LED_BUILTIN, HIGH);
-    } else {
-      digitalWrite(LED_BUILTIN, LOW);
-    }
-
 #if USE_MIDI_USB
 #if CPU_MIDI
     // Envoi de la charge CPU moyenne (CC 80) et max (CC 81) sur le canal 1
@@ -233,7 +250,6 @@ void loop()
 #endif
 
 #if SerialUSB
-
 #if CPU_Serial
     // Affichage Charge CPU dans le moniteur série
     Serial.print("Charge CPU Audio Actuelle : ");

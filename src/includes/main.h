@@ -6,6 +6,7 @@
 #include "../EffetDisto/Disto.h"
 #include "../EffetTremolo/Tremolo.h"
 #include "../EffetNoiseGate/NoiseGate.h"
+#include "../EffetEqualizer/Equalizer.h"
 #include "Utils.h"
 
 #if Osc || OscCodec
@@ -19,7 +20,7 @@ AudioInputTDM       tdm_codec_in;
 AudioOutputTDM       tdm_codec_out;
 
 // A changer en fonction de l'entrée utilisé sur la carte
-const int reset_p = 34; 
+const int reset_p = 2; 
 #endif
 
 #if Usb
@@ -36,4 +37,5 @@ extern DelayEffect              DelaysObj[6];
 extern DistoEffect              DistosObj[6];
 extern TremoloEffect            TremolosObj[6];
 extern NoiseGateEffect          NoiseGatesObj[6];
+extern EqualizerEffect          EqualizersObj[6];
 extern BypassEffect             BypassObj[6];

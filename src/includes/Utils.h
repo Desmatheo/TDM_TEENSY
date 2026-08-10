@@ -2,9 +2,9 @@
 
 #define TEENSY 1
 
-#define Osc 0
+#define Osc 1
 #if Osc
-#define OscCodec 0
+#define OscCodec 1
 #else 
 #define GuitareCodec 1
 #endif
@@ -12,7 +12,7 @@
 
 #if Usb
 #define SerialUSB 1
-#define CPU_Serial 0
+#define CPU_Serial 1
 #define CPU_MIDI 1
 
 #define USE_MIDI_USB 1

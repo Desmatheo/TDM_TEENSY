@@ -42,7 +42,7 @@ public:
     }
 
     // IDs des effets — NONE=0 est réservé (pas d'effet)
-    enum EffectID { NONE = 0, DELAY = 1, DISTO = 2, OCTAVER = 3, TREMOLO = 4, NOISEGATE = 5, NUM_EFFECT_IDS = 6 };
+    enum EffectID { NONE = 0, DELAY = 1, DISTO = 2, OCTAVER = 3, TREMOLO = 4, NOISEGATE = 5, EQUALIZER = 6, NUM_EFFECT_IDS = 7 };
 
     // Tableau de pointeurs polymorphiques indexé par EffectID
     // effects_[0] (NONE) reste nullptr

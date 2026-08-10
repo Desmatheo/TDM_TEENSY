@@ -132,7 +132,21 @@ float DistoEffect::testOverDrive(float input){
 }
 
 float DistoEffect::testFuzz(float input, float gainVal){
-    return input;
+
+    // Dans une fuzz, le gain appliqué en amont est souvent énorme (ex: x50 ou x100)
+    
+    // Si le signal est positif, on le force au maximum (1.0)
+    if (input > 0.05f) {
+        return 1.0f;
+    } 
+    // S'il est négatif, on le force au minimum (-1.0)
+    else if (input < -0.05f) {
+        return -1.0f;
+    }
+    // Zone de transition très fine pour garder un tout petit peu d'attaque
+    else {
+        return input * gainVal * 2.0f; // Amplification pour la zone de transition
+    }
 }
 
 // Helper functions for oversampling
@@ -180,7 +194,8 @@ void DistoEffect::processDistortion(float &sample,           // Sample to proces
         sample = softClipping(sample, gainVal * (1.0f + intensityVal * 4.0f));
         break;
     case 2: // Fuzz
-        sample = fuzzEffect(sample * gainVal, intensityVal * 10.0f);
+        // sample = fuzzEffect(sample * gainVal, intensityVal * 10.0f);
+        sample = testFuzz(sample, gainVal);
         break;
     case 3: // Tube Saturation
         sample = tubeSaturation(sample, gainVal * (1.0f + intensityVal * 10.0f));

@@ -3,10 +3,10 @@
 #include "main.h" 
 #include "Utils.h"
 
-// Nombre de types d'effets (indices 0..4 : DISTO, OCTAVER, TREMOLO, DELAY, NOISEGATE)
-static constexpr int NUM_EFFECT_TYPES = 5;
+// Nombre de types d'effets (indices 0..5 : DISTO, OCTAVER, TREMOLO, DELAY, NOISEGATE, EQUALIZER)
+static constexpr int NUM_EFFECT_TYPES = 6;
 // Indices dans allEffects[][] et effectUserEnabled[][]
-enum EffectTypeIdx { EFX_DISTO = 0, EFX_OCTAVER = 1, EFX_TREMOLO = 2, EFX_DELAY = 3, EFX_NOISEGATE = 4 };
+enum EffectTypeIdx { EFX_DISTO = 0, EFX_OCTAVER = 1, EFX_TREMOLO = 2, EFX_DELAY = 3, EFX_NOISEGATE = 4, EFX_EQUALIZER = 5 };
 
 // Tableau [type][corde] — initialisé dans setup() de main.cpp n'est pas possible car 
 // les adresses sont connues à la compilation, on les initialise ici en static
@@ -16,6 +16,7 @@ static Effect* allEffects[NUM_EFFECT_TYPES][6] = {
     {&TremolosObj[0],   &TremolosObj[1],   &TremolosObj[2],   &TremolosObj[3],   &TremolosObj[4],   &TremolosObj[5]},
     {&DelaysObj[0],     &DelaysObj[1],     &DelaysObj[2],     &DelaysObj[3],     &DelaysObj[4],     &DelaysObj[5]},
     {&NoiseGatesObj[0], &NoiseGatesObj[1], &NoiseGatesObj[2], &NoiseGatesObj[3], &NoiseGatesObj[4], &NoiseGatesObj[5]},
+    {&EqualizersObj[0], &EqualizersObj[1], &EqualizersObj[2], &EqualizersObj[3], &EqualizersObj[4], &EqualizersObj[5]},
 };
 
 // Sauvegarde l'état "configuré" par l'utilisateur (indépendant du mute/bypass global)
@@ -25,6 +26,7 @@ static bool effectUserEnabled[NUM_EFFECT_TYPES][6] = {
     {false, false, false, false, false, false}, // Tremolo
     {false, false, false, false, false, false}, // Delay
     {false, false, false, false, false, false}, // NoiseGate
+    {false, false, false, false, false, false}, // Equalizer
 };
 
 static bool stringBypass[6] = {false}; // Bypass individuel par corde (Mute)
@@ -37,6 +39,7 @@ struct BypassCCMapping {
 };
 static constexpr BypassCCMapping bypassCCMap[] = {
     {48,  EFX_DELAY},
+    {75,  EFX_EQUALIZER},
     {88,  EFX_DISTO},
     {89,  EFX_OCTAVER},
     {118, EFX_TREMOLO},
@@ -54,8 +57,9 @@ struct ParamCCRange {
 static constexpr ParamCCRange paramRanges[] = {
     {10,  16,  EFX_DELAY,     "DELAY"},
     {50,  56,  EFX_DISTO,     "DISTO"},
+    {76,  81,  EFX_EQUALIZER, "EQUALIZER"},
     {90,  95,  EFX_OCTAVER,   "OCTAVER"},
-    {110, 115, EFX_TREMOLO,   "TREMOLO"},
+    {110, 116, EFX_TREMOLO,   "TREMOLO"},
     {120, 122, EFX_NOISEGATE, "NOISE GATE"},
 };
 static constexpr int NUM_PARAM_RANGES = sizeof(paramRanges) / sizeof(paramRanges[0]);
