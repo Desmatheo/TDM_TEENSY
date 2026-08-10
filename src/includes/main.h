@@ -7,6 +7,7 @@
 #include "../EffetTremolo/Tremolo.h"
 #include "../EffetNoiseGate/NoiseGate.h"
 #include "../EffetEqualizer/Equalizer.h"
+#include "../EffetCompresseur/Compresseur.h"
 #include "Utils.h"
 
 #if Osc || OscCodec
@@ -38,4 +39,5 @@ extern DistoEffect              DistosObj[6];
 extern TremoloEffect            TremolosObj[6];
 extern NoiseGateEffect          NoiseGatesObj[6];
 extern EqualizerEffect          EqualizersObj[6];
+extern CompresseurEffect        CompresseurObj[6];
 extern BypassEffect             BypassObj[6];

@@ -10,6 +10,7 @@ DistoEffect              DistosObj[6];
 TremoloEffect            TremolosObj[6]; 
 NoiseGateEffect          NoiseGatesObj[6];
 EqualizerEffect          EqualizersObj[6];
+CompresseurEffect        CompresseurObj[6];
 #endif
 BypassEffect             BypassObj[6];
 
@@ -51,12 +52,19 @@ AudioConnection  c9(BypassObj[3], 0, mixer_1a4,  3);
 AudioConnection c10(BypassObj[4], 0, mixer_5et6, 0);
 AudioConnection c11(BypassObj[5], 0, mixer_5et6, 1);
 #else
-AudioConnection  c6(BypassObj[0], 0, DistosObj[0], 0);
-AudioConnection  c7(BypassObj[1], 0, DistosObj[1], 0);
-AudioConnection  c8(BypassObj[2], 0, DistosObj[2], 0);
-AudioConnection  c9(BypassObj[3], 0, DistosObj[3], 0);
-AudioConnection c10(BypassObj[4], 0, DistosObj[4], 0);
-AudioConnection c11(BypassObj[5], 0, DistosObj[5], 0);
+AudioConnection  compIn0(BypassObj[0], 0, CompresseurObj[0], 0);
+AudioConnection  compIn1(BypassObj[1], 0, CompresseurObj[1], 0);
+AudioConnection  compIn2(BypassObj[2], 0, CompresseurObj[2], 0);
+AudioConnection  compIn3(BypassObj[3], 0, CompresseurObj[3], 0);
+AudioConnection  compIn4(BypassObj[4], 0, CompresseurObj[4], 0);
+AudioConnection  compIn5(BypassObj[5], 0, CompresseurObj[5], 0);
+
+AudioConnection  c6(CompresseurObj[0], 0, DistosObj[0], 0);
+AudioConnection  c7(CompresseurObj[1], 0, DistosObj[1], 0);
+AudioConnection  c8(CompresseurObj[2], 0, DistosObj[2], 0);
+AudioConnection  c9(CompresseurObj[3], 0, DistosObj[3], 0);
+AudioConnection c10(CompresseurObj[4], 0, DistosObj[4], 0);
+AudioConnection c11(CompresseurObj[5], 0, DistosObj[5], 0);
 
 AudioConnection c12(DistosObj[0], 0, OctaverObj[0], 0);
 AudioConnection c13(DistosObj[1], 0, OctaverObj[1], 0);
@@ -136,34 +144,34 @@ void setup()
 
 #if Osc || OscCodec
 // test accord sympa :)
-//   osc[0].begin(0.03f, 110.00f, WAVEFORM_SINE); // 110..660 Hz
-//   osc[1].begin(0.01f, 329.63f, WAVEFORM_SINE); // 110..660 Hz
-//   osc[2].begin(0.03f, 440.00f, WAVEFORM_SINE); // 110..660 Hz
-//   osc[3].begin(0.01f, 554.37f, WAVEFORM_SINE); // 110..660 Hz
-//   osc[4].begin(0.01f, 659.26f, WAVEFORM_SINE); // 110..660 Hz
-//   osc[5].begin(0.03f, 880.00f, WAVEFORM_SINE); // 110..660 Hz
+  osc[0].begin(3 * 0.015f, 110.00f, WAVEFORM_SINE); // 110..660 Hz
+  osc[1].begin(0.005f, 329.63f, WAVEFORM_SINE); // 110..660 Hz
+  osc[2].begin(3 * 0.015f, 440.00f, WAVEFORM_SINE); // 110..660 Hz
+  osc[3].begin(0.005f, 554.37f, WAVEFORM_SINE); // 110..660 Hz
+  osc[4].begin(0.005f, 659.26f, WAVEFORM_SINE); // 110..660 Hz
+  osc[5].begin(3 * 0.015f, 880.00f, WAVEFORM_SINE); // 110..660 Hz
 
 
-  osc[0].begin(0.01f, 80.0f, WAVEFORM_SINE); // 110..660 Hz
-  osc[1].begin(0.01f, 250.0f, WAVEFORM_SINE); // 110..660 Hz
-  osc[2].begin(0.01f, 750.0f, WAVEFORM_SINE); // 110..660 Hz
-  osc[3].begin(0.01f, 2200.00f, WAVEFORM_SINE); // 110..660 Hz
-  osc[4].begin(0.01f, 6600.00f, WAVEFORM_SINE); // 110..660 Hz
-  osc[5].begin(0.01f, 80.0f, WAVEFORM_SINE); // 110..660 Hz
+  // osc[0].begin(0.21f, 80.0f, WAVEFORM_SINE); // 110..660 Hz
+  // osc[1].begin(0.01f, 250.0f, WAVEFORM_SINE); // 110..660 Hz
+  // osc[2].begin(0.11f, 750.0f, WAVEFORM_SINE); // 110..660 Hz
+  // osc[3].begin(0.01f, 2200.00f, WAVEFORM_SINE); // 110..660 Hz
+  // osc[4].begin(0.01f, 6600.00f, WAVEFORM_SINE); // 110..660 Hz
+  // osc[5].begin(0.11f, 80.0f, WAVEFORM_SINE); // 110..660 Hz
 #endif
 
 #if UtilEffet
 #define TestMano 1
   for (int i = 0; i < 6; i++){
     
-#if TestMano 
     OctaverObj[i].setEnabled(false);
     DelaysObj[i].setEnabled(false);
     DistosObj[i].setEnabled(false);
     TremolosObj[i].setEnabled(false);  
     NoiseGatesObj[i].setEnabled(false);
     EqualizersObj[i].setEnabled(false);
-#endif
+    CompresseurObj[i].setEnabled(false);
+    
     BypassObj[i].setStringIndex(i);
     BypassObj[i].setEffect(BypassEffect::DISTO,     &DistosObj[i]);
     BypassObj[i].setEffect(BypassEffect::OCTAVER,   &OctaverObj[i]);
@@ -171,6 +179,7 @@ void setup()
     BypassObj[i].setEffect(BypassEffect::DELAY,     &DelaysObj[i]);
     BypassObj[i].setEffect(BypassEffect::NOISEGATE, &NoiseGatesObj[i]);
     BypassObj[i].setEffect(BypassEffect::EQUALIZER, &EqualizersObj[i]);
+    BypassObj[i].setEffect(BypassEffect::COMPRESSEUR, &CompresseurObj[i]);
 
     OctaverObj[i].setMix(0.7f);
     OctaverObj[i].setVolume(1.0f);
@@ -199,12 +208,26 @@ void setup()
     NoiseGatesObj[i].setRelease(50.0f);
     
     EqualizersObj[i].begin();
-    EqualizersObj[i].setBand(0, 0.5f); // 0dB
-    EqualizersObj[i].setBand(1, 0.5f); // 0dB
-    EqualizersObj[i].setBand(2, 0.5f); // 0dB
-    EqualizersObj[i].setBand(3, 0.5f); // 0dB
-    EqualizersObj[i].setBand(4, 0.5f); // 0dB
+    // /*setBand(numéro de la bande {80.0f, 250.0f, 750.0f, 2200.0f, 6600.0f}
+    //          , valeure normalisée [0 = -12dB, 1 = +12dB]
+    //          )*/
+    EqualizersObj[i].setBand(0, 0.0f); 
+    EqualizersObj[i].setBand(1, 0.0f); 
+    EqualizersObj[i].setBand(2, 0.0f); 
+    EqualizersObj[i].setBand(3, 0.0f); 
+    EqualizersObj[i].setBand(4, 0.0f); 
     EqualizersObj[i].setVolume(1.0f);
+
+    CompresseurObj[i].setThreshold(-15.0f);
+    CompresseurObj[i].setRatio(2.5f);
+    CompresseurObj[i].setAttack(25.0f);
+    CompresseurObj[i].setRelease(150.0f);
+    CompresseurObj[i].setMakeupGain(2.0f);
+
+#if TestMano
+    EqualizersObj[i].setEnabled(false);
+    CompresseurObj[i].setEnabled(true);
+#endif
   }
 #endif
 
