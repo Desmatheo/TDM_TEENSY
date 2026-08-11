@@ -7,8 +7,6 @@
 #include "AudioStream.h"
 #include "arm_math.h"
 
-
- 
 class DelayEffect 
 #if !UtilBypassRoutage
 : public AudioStream
@@ -20,20 +18,51 @@ public:
 
     static constexpr size_t MAX_DELAY = static_cast<size_t>(44100 * 4.0f);
 
+    DelayEffect();
+    ~DelayEffect();
+    bool begin();
+
+#if !TEENSY
+    virtual void update(const float** in, float** out, int idx) override;
+#else
+#if !UtilBypassRoutage
+    virtual void update() override;
+#else 
+    virtual void update(float* buffer, int numSamples) override;
+#endif
+#endif
+
+    // Setters pour personnalisation
+    void setMix(float mix);
+    void setVolume(float vol);
+    void setDelayMode(float mode);
+    void setDelayTime(float time);
+    void setDelayTimeTap(float time);
+    void setFeedback(float fdbk);
+    void setBpm(float bpm);
+    void setBpmTap(float time);
+    void setSubdivision(float value);
+    float getMix() {return wetMix;}
+
+    void setParameter(int param_id, float value);
+
+private:
+#if !UtilBypassRoutage
+    audio_block_t* inputQueueArray_[1];
+#endif
+
     // Paramètres internes
     float dryMix = 0.5f;
     float wetMix = 0.5f;
     float volume = 1;
-    float vdelayTime = 0.5f;
     float vdelayFDBK = 0.7f;
-    float timeFirstTap; 
 
-    // Nouvelles variables pour BPM / Manuel
+    // Variables pour BPM / Manuel
     int delayMode = 0;           // 0 = Manual, 1 = Tempo
     float manualTimeMs = 500.0f; // Temps en ms si mode manuel
     float currentBPM = 120.0f;   // BPM courant
     float currentSubdivisionMult = 1.0f; // Multiplicateur rythmique (1.0 = Noire)
-    
+
     void recalculateDelayTime();
 
     // Structure interne pour gérer le buffer de delay
@@ -62,36 +91,4 @@ public:
     };
 
     DelayChannel delay;
-
-    DelayEffect();
-    ~DelayEffect();
-    bool begin();
-
-#if !TEENSY
-    virtual void update(const float** in, float** out, int idx) override;
-#else
-#if !UtilBypassRoutage
-    virtual void update() override;
-#else 
-    virtual void update(float* buffer, int numSamples) override;
-#endif
-#endif
-
-    // Setters pour personnalisation
-    void setMix(float mix);
-    void setVolume(float vol);
-    void setDelayMode(float mode);
-    void setDelayTime(float time);
-    void setDelayTimeTap(float time);
-    void setFeedback(float fdbk);
-    void setBpm(float bpm);
-    void setBpmTap(float time);
-    void setSubdivision(float value);
-    float getMix() {return wetMix;};
-
-    void setParameter(int param_id, float value);
-private:
-#if !UtilBypassRoutage
-    audio_block_t* inputQueueArray_[1];
-#endif
 };

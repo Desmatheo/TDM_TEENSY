@@ -43,7 +43,7 @@ extern CompresseurEffect        CompresseurObj[6];
 extern BypassEffect             BypassObj[6];
 
 
-void setupEffet(){
+inline void setupEffet(){
 #if UtilEffet
 #define TestMano 1
   for (int i = 0; i < 6; i++){

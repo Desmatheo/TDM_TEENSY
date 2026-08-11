@@ -466,7 +466,7 @@ void DistoEffect::setParameter(int param_id, float value) {
             setVolume(value);
             break;
         default:
-#if !USE_DAISY
+#if SerialUSB
             Serial.print("Parametre invalide: ");
             Serial.println(param_id);
 #endif

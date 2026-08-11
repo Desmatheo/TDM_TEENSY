@@ -26,30 +26,6 @@ class DistoEffect
     static constexpr float postFilterCutoff = 8000.0f;
     static constexpr uint8_t overFactor = 16;
 
-    float samplerate;
-
-    float volume = 1;
-    float dryMix = 0.5f;
-    float wetMix = 0.5f;
-
-    float gain;
-    float min_gain = 1.0f;
-    float max_gain = 20.0f;
-
-    float toneFreq;
-    float toneAmount = 0.5f;
-    bool oversamp;
-    float intensity;
-
-    int effect_mode = 0;
-
-    daisysp::Tone2 tone;
-
-    // Filters as member variables to prevent cross-channel memory sharing
-    cycfi::q::highpass preFilter;
-    cycfi::q::lowpass postFilter;
-    cycfi::q::lowpass upsamplingLowpassFilter;
-
     DistoEffect(float sampleRate = AUDIO_SAMPLE_RATE_EXACT); 
 
 #if !TEENSY
@@ -81,6 +57,29 @@ private:
 #endif
     float anti_denormal = 1e-9f;
 
+    float samplerate;
+
+    float volume = 1;
+    float dryMix = 0.5f;
+    float wetMix = 0.5f;
+
+    float gain;
+    float min_gain = 1.0f;
+    float max_gain = 20.0f;
+
+    float toneFreq;
+    float toneAmount = 0.5f;
+    bool oversamp;
+    float intensity;
+
+    int effect_mode = 0;
+
+    daisysp::Tone2 tone;
+
+    // Filters as member variables to prevent cross-channel memory sharing
+    cycfi::q::highpass preFilter;
+    cycfi::q::lowpass postFilter;
+    cycfi::q::lowpass upsamplingLowpassFilter;
 
     // Helper functions for distortion and clipping
     float hardClipping(float input, float threshold);
