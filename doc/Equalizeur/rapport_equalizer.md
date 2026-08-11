@@ -72,80 +72,96 @@ C'est la raison pour laquelle, lors de l'implémentation, les coefficients sont 
 
 Un égaliseur à $N$ bandes est simplement constitué de $N$ filtres biquadratiques placés en série (en cascade). Le signal d'entrée traverse le filtre de la bande 1, puis le résultat traverse le filtre de la bande 2, et ainsi de suite.
 
-## 2. Implémentation du Code
+## 2. Implémentation du Code et Algorithmique
 
-L'effet est implémenté dans la classe `EqualizerEffect` (`Equalizer.cpp` et `Equalizer.h`). Il s'agit d'un **égaliseur à 5 bandes** utilisant la bibliothèque CMSIS DSP de ARM pour des performances optimales sur le microcontrôleur.
+L'effet est implémenté dans la classe `EqualizerEffect` (`Equalizer.cpp` et `Equalizer.h`). L'algorithme repose sur une approche par **blocs d'échantillons** (buffer) et utilise la bibliothèque CMSIS DSP pour traiter **5 filtres biquadratiques en série**.
 
-### 2.1 Initialisation et Configuration
+### 2.1 Variables d'état et Initialisation (Le Constructeur)
 
-Les 5 fréquences centrales sont prédéfinies pour couvrir le spectre audio :
-- **80 Hz** (Basses profondes)
-- **250 Hz** (Bas-médiums)
-- **750 Hz** (Médiums)
-- **2200 Hz** (Haut-médiums)
-- **6600 Hz** (Aigus)
+Un aspect fondamental des filtres IIR (qui utilisent les échantillons passés, $z^{-1}$ et $z^{-2}$) est qu'ils possèdent une "mémoire". En C++, cette mémoire s'appelle l'état du filtre.
 
-Le facteur de qualité $Q$ est fixé à `1.414` (ce qui correspond à $\sqrt{2}$), une valeur classique offrant un bon compromis entre la largeur de la cloche et le chevauchement des bandes.
-
+Dans le fichier d'en-tête (`Equalizer.h`), nous avons les variables suivantes :
 ```cpp
-float frequencies[5] = {80.0f, 250.0f, 750.0f, 2200.0f, 6600.0f};
-float Q = 1.414f; 
-float Fs = 44100.0f; 
+float pCoeffs[5 * 5]; // 5 coefficients pour 5 bandes = 25 float
+float pState[5 * 4];  // 4 variables d'état pour 5 bandes = 20 float
+```
+*   **`pCoeffs`** : Stocke les coefficients $b_0, b_1, b_2, -a_1, -a_2$ pour chaque bande.
+*   **`pState`** : Stocke l'historique ($x[n-1], x[n-2], y[n-1], y[n-2]$) pour que le filtre sache où il en était à la fin du bloc audio précédent. L'algorithme de CMSIS DSP a besoin de 4 variables d'état par filtre biquadratique.
+
+Dans le constructeur, nous initialisons la structure `iir_inst` qui lie ensemble les coefficients, l'état et l'architecture :
+```cpp
+// 5 = le nombre de filtres en cascade
+arm_biquad_cascade_df1_init_f32(&iir_inst, 5, pCoeffs, pState);
 ```
 
-### 2.2 Calcul des Coefficients (`calculateCoeffs()`)
+### 2.2 Algorithme de Calcul des Coefficients (`calculateCoeffs()`)
 
-La méthode `calculateCoeffs()` implémente exactement la théorie mentionnée ci-dessus. Pour chaque bande de fréquence :
-1. Elle récupère le gain en dB (qui peut aller de -12 dB à +12 dB).
-2. Elle calcule les variables intermédiaires $A$, $\omega_0$ et $\alpha$.
-3. Elle déduit les coefficients $b_0, b_1, b_2, a_1, a_2$ (normalisés par $a_0$).
+Cette fonction est appelée chaque fois qu'un paramètre (gain d'une bande) change. L'algorithme suit ces étapes pour chacune des 5 bandes :
+
+1.  **Récupération de la cible** : On lit le gain souhaité en dB pour la bande (ex: +3 dB pour les basses à 80 Hz).
+2.  **Conversion mathématique** : On applique les formules de l'Audio EQ Cookbook (vues en section 1.2) pour générer les 5 coefficients mathématiques bruts.
+3.  **Stockage formaté pour le DSP** : La fonction stocke les résultats dans le tableau `pCoeffs`.
 
 > [!TIP]
-> **Stockage CMSIS DSP**
-> La bibliothèque `arm_math.h` exige que les coefficients soient passés dans un ordre spécifique pour chaque biquad : `b0, b1, b2, -a1, -a2`. L'inversion de signe pour $a_1$ et $a_2$ est une optimisation de l'architecture DSP pour utiliser l'instruction MAC (Multiply-Accumulate) plus efficacement.
+> **Optimisation d'architecture**
+> La bibliothèque `arm_math.h` exige que les coefficients soient ordonnés de cette manière : `b0, b1, b2, -a1, -a2`. L'inversion de signe pour $a_1$ et $a_2$ permet à l'algorithme interne de la puce ARM d'utiliser presque exclusivement des additions via des instructions matérielles MAC (Multiply-Accumulate). C'est beaucoup plus rapide que d'alterner les additions et les soustractions dans la boucle.
 
-```cpp
-// CMSIS DSP stocke : b0, b1, b2, -a1, -a2
-int idx = i * 5;
-pCoeffs[idx]     = b0;
-pCoeffs[idx + 1] = b1;
-pCoeffs[idx + 2] = b2;
-pCoeffs[idx + 3] = -a1;
-pCoeffs[idx + 4] = -a2;
-```
+### 2.3 Algorithme de Traitement du Signal (`update()`)
 
-### 2.3 Traitement du Signal (`update()`)
+C'est ici qu'est exécutée la boucle audio principale, appelée en continu par le framework audio Teensy. Le système ne donne pas le son échantillon par échantillon, mais par **blocs de 128 échantillons** pour plus d'efficacité.
 
-Le traitement audio principal s'effectue dans la méthode `update()`.
-
-Si le routage Teensy est activé, il récupère un bloc audio de 128 échantillons (entiers 16 bits) et le convertit en flottants (entre -1.0 et 1.0) :
+**Étape 1 : Conversion d'Entrée (Fixed-point vers Floating-point)**
+Les données audio provenant du synthétiseur ou de l'entrée audio sont en entiers 16 bits (`int16_t`, entre -32768 et +32767).
+Le filtre biquad nécessite une grande précision numérique pour ne pas créer d'artefacts (distorsion due aux arrondis). L'algorithme commence donc par tout convertir en nombres à virgule flottante (`float`, entre -1.0 et 1.0).
 ```cpp
 float f32_block[128];
 for (int i = 0; i < 128; i++) {
-    f32_block[i] = (float)block->data[i] / 32768.0f;
+    // Division par 32768.0 pour normaliser entre -1.0 et 1.0
+    f32_block[i] = (float)block->data[i] / 32768.0f; 
 }
 ```
 
-Ensuite, la magie s'opère en une seule ligne grâce à la fonction ultra-optimisée de la bibliothèque CMSIS DSP qui applique la cascade de nos 5 filtres biquadratiques (Direct Form I) :
+**Étape 2 : Le filtrage DSP**
+Au lieu d'écrire nous-mêmes les boucles `for` imbriquées pour appliquer l'équation de récurrence (vue en section 1.3) à chaque échantillon et chaque bande, on fait appel au moteur DSP ARM :
 ```cpp
 arm_biquad_cascade_df1_f32(&iir_inst, f32_block, f32_out, 128);
 ```
-L'instance `iir_inst` a été initialisée avec le nombre de stages (5), les coefficients calculés et un tableau d'états (mémoire des échantillons précédents nécessaires pour les équations de récurrence $z^{-1}$ et $z^{-2}$).
+Algorithmiquement, cette unique fonction C exécute la logique suivante :
+*   Pour chaque échantillon (de l'index 0 à 127) :
+    *   Faire passer l'échantillon dans le Filtre 1 (Basses à 80 Hz)
+    *   Faire passer le résultat du Filtre 1 dans le Filtre 2 (250 Hz)
+    *   ... Et ainsi de suite jusqu'au Filtre 5
+    *   Mettre à jour l'historique `pState` de chaque filtre pour le calcul du prochain échantillon.
 
-Enfin, un volume global est appliqué, le signal est "clampé" (limité entre -1.0 et 1.0 pour éviter l'overflow numérique en sortie) et reconverti en entier 16 bits.
-
-### 2.4 Contrôle des Paramètres
-
-Les paramètres sont mis à jour via `setParameter()`. Les bandes sont indexées de 0 à 4, et le volume est le paramètre 5.
-
-La méthode `setBand()` reçoit une valeur normalisée entre `0.0` et `1.0`. Cette valeur est mise à l'échelle pour correspondre à une plage de **-12 dB à +12 dB**.
+**Étape 3 : Application du volume, Saturation et Conversion de Sortie**
+Le signal filtré doit ensuite être reconverti en entier 16 bits. 
 ```cpp
-// Mappe [0.0, 1.0] vers [-12dB, +12dB]
-gains_db[band_index] = (value_norm - 0.5f) * 24.0f;
-calculateCoeffs();
+for (int i = 0; i < 128; i++) {
+    // 1. Application du gain global (Master Volume)
+    float sample = f32_out[i] * volume; 
+    
+    // 2. Saturation algorithmique (Clipping)
+    sample = clampf(sample, -1.0f, 1.0f); 
+    
+    // 3. Re-multiplication par 32767 et cast en entier
+    block->data[i] = (int16_t)(sample * 32767.0f);
+}
 ```
-À chaque modification d'un gain, `calculateCoeffs()` est appelée pour régénérer dynamiquement les coefficients de l'égaliseur.
+L'étape de **saturation (clamp)** est algorithmiquement cruciale : si l'égaliseur a trop amplifié une fréquence, la valeur flottante va dépasser `1.0` ou descendre sous `-1.0`. Sans la fonction `clampf`, la multiplication par 32767 produirait un dépassement de capacité ("integer overflow"), ce qui inverserait brusquement le signe du signal et produirait un bruit numérique assourdissant. Le clamp agit comme un limiteur de sécurité ("hard clipper").
+
+### 2.4 Contrôle des Paramètres et Mapping
+
+La fonction `setParameter(id, value)` est le pont entre l'interface utilisateur (boutons physiques ou interface graphique MIDI) et l'algorithme mathématique.
+Les valeurs entrantes (`value`) sont standardisées entre `0.0` (potentiomètre au minimum) et `1.0` (potentiomètre au maximum).
+
+L'algorithme de `setBand()` s'occupe de la mise à l'échelle, appelée le "mapping" :
+```cpp
+// Transforme l'entrée [0.0 , 1.0] vers la sortie en décibels [-12.0 dB , +12.0 dB]
+gains_db[band_index] = (value_norm - 0.5f) * 24.0f;
+```
+*   En soustrayant `0.5`, on centre la valeur sur `0.0` (la plage devient `[-0.5, 0.5]`). 
+*   En multipliant par `24.0` (l'amplitude totale voulue, de -12 à +12), le bouton à `0.0` donne bien `-12 dB`, à `0.5` on a `0 dB` (filtre transparent), et à `1.0` on a `+12 dB`.
 
 ## Conclusion
 
-Cette implémentation de l'égaliseur est à la fois robuste et très performante. L'utilisation de mathématiques standard pour les filtres IIR (*Audio EQ Cookbook*) garantit une réponse en fréquence musicale, tandis que l'utilisation de la bibliothèque **CMSIS DSP** (avec ses instructions optimisées SIMD et MAC) permet au microcontrôleur d'appliquer 5 filtres biquadratiques à chaque échantillon audio avec un impact minimal sur le CPU.
+Cette implémentation de l'égaliseur est à la fois robuste et très performante. L'utilisation de mathématiques standard pour les filtres IIR (*Audio EQ Cookbook*) garantit une réponse en fréquence musicale. Au niveau algorithmique, l'utilisation d'un traitement par blocs de 128 échantillons et de la bibliothèque **CMSIS DSP** permet au microcontrôleur d'appliquer les 5 filtres en cascade avec une efficacité redoutable, minimisant l'impact sur le CPU tout en conservant une grande flexibilité de contrôle.
