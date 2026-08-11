@@ -53,8 +53,8 @@ public:
             effects_[effectID] = fx;
     }
 
-    // 3 slots dynamiques (contrôlés par CC 20, 21, 22 depuis Python)
-    int slots_[3] = {NONE, NONE, NONE}; // Défaut
+    // 4 slots dynamiques (contrôlés par CC 20, 21, 22, 23 depuis Python)
+    int slots_[4] = {NONE, NONE, NONE, NONE}; // Défaut
 
     void setSlot(int slotIndex, int effectID) {
         slots_[slotIndex] = effectID;

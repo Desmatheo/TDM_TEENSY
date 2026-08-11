@@ -190,9 +190,9 @@ static void OnControlChange(byte channel, byte control, byte value) {
                 }
             }
 
-            // Changement de l'ordre du chaînage via les 3 Slots (CC 20, 21, 22)
+            // Changement de l'ordre du chaînage via les 4 Slots (CC 20, 21, 22, 23)
             // mapping : 0=None, 1=Delay, 2=Disto, 3=Earth, 4=Tremolo
-            else if (control >= 20 && control <= 22) {
+            else if (control >= 20 && control <= 23) {
                 int slotIdx = control - 20;
                 BypassObj[targetCorde].setSlot(slotIdx, value);
 

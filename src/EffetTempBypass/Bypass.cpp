@@ -39,9 +39,9 @@ void BypassEffect::update() {
     volume_ = volume_ + 0.1f * (rms - volume_);
 #endif
 
-    // Chaînage des effets via les 3 slots — dispatch polymorphique
+    // Chaînage des effets via les 4 slots — dispatch polymorphique
 #if UtilEffet && UtilBypassRoutage
-    for (int slot = 0; slot < 3; slot++) {
+    for (int slot = 0; slot < 4; slot++) {
         int id = slots_[slot];
         if (id > 0 && id < NUM_EFFECT_IDS && effects_[id]) {
             effects_[id]->update(buffer, AUDIO_BLOCK_SAMPLES);

@@ -2,12 +2,13 @@
 
 #define TEENSY 1
 
-#define Osc 1
+#define Osc 0
 #if Osc
 #define OscCodec 1
 #else 
 #define GuitareCodec 1
 #endif
+
 #define Usb 1
 
 #if Usb
