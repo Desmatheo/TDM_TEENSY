@@ -11,7 +11,7 @@
 #define Usb 1
 
 #if Usb
-#define SerialUSB 1
+#define SerialUSB 0
 #define CPU_Serial 1
 #define CPU_MIDI 1
 
