@@ -3,10 +3,10 @@
 #include "main.h" 
 #include "Utils.h"
 
-// Nombre de types d'effets (indices 0..5 : DISTO, OCTAVER, TREMOLO, DELAY, NOISEGATE, EQUALIZER)
-static constexpr int NUM_EFFECT_TYPES = 6;
+// Nombre de types d'effets (indices 0..6 : DISTO, OCTAVER, TREMOLO, DELAY, NOISEGATE, EQUALIZER, COMPRESSEUR)
+static constexpr int NUM_EFFECT_TYPES = 7;
 // Indices dans allEffects[][] et effectUserEnabled[][]
-enum EffectTypeIdx { EFX_DISTO = 0, EFX_OCTAVER = 1, EFX_TREMOLO = 2, EFX_DELAY = 3, EFX_NOISEGATE = 4, EFX_EQUALIZER = 5 };
+enum EffectTypeIdx { EFX_DISTO = 0, EFX_OCTAVER = 1, EFX_TREMOLO = 2, EFX_DELAY = 3, EFX_NOISEGATE = 4, EFX_EQUALIZER = 5, EFX_COMPRESSEUR = 6 };
 
 // Tableau [type][corde] — initialisé dans setup() de main.cpp n'est pas possible car 
 // les adresses sont connues à la compilation, on les initialise ici en static
@@ -17,6 +17,7 @@ static Effect* allEffects[NUM_EFFECT_TYPES][6] = {
     {&DelaysObj[0],     &DelaysObj[1],     &DelaysObj[2],     &DelaysObj[3],     &DelaysObj[4],     &DelaysObj[5]},
     {&NoiseGatesObj[0], &NoiseGatesObj[1], &NoiseGatesObj[2], &NoiseGatesObj[3], &NoiseGatesObj[4], &NoiseGatesObj[5]},
     {&EqualizersObj[0], &EqualizersObj[1], &EqualizersObj[2], &EqualizersObj[3], &EqualizersObj[4], &EqualizersObj[5]},
+    {&CompresseurObj[0],&CompresseurObj[1],&CompresseurObj[2],&CompresseurObj[3],&CompresseurObj[4],&CompresseurObj[5]},
 };
 
 // Sauvegarde l'état "configuré" par l'utilisateur (indépendant du mute/bypass global)
@@ -27,6 +28,7 @@ static bool effectUserEnabled[NUM_EFFECT_TYPES][6] = {
     {false, false, false, false, false, false}, // Delay
     {false, false, false, false, false, false}, // NoiseGate
     {false, false, false, false, false, false}, // Equalizer
+    {false, false, false, false, false, false}, // Compresseur
 };
 
 static bool stringBypass[6] = {false}; // Bypass individuel par corde (Mute)
@@ -42,6 +44,7 @@ static constexpr BypassCCMapping bypassCCMap[] = {
     {75,  EFX_EQUALIZER},
     {88,  EFX_DISTO},
     {89,  EFX_OCTAVER},
+    {99,  EFX_COMPRESSEUR},
     {118, EFX_TREMOLO},
     {119, EFX_NOISEGATE},
 };
@@ -59,6 +62,7 @@ static constexpr ParamCCRange paramRanges[] = {
     {50,  56,  EFX_DISTO,     "DISTO"},
     {76,  81,  EFX_EQUALIZER, "EQUALIZER"},
     {90,  95,  EFX_OCTAVER,   "OCTAVER"},
+    {100, 104, EFX_COMPRESSEUR, "COMPRESSEUR"},
     {110, 116, EFX_TREMOLO,   "TREMOLO"},
     {120, 122, EFX_NOISEGATE, "NOISE GATE"},
 };
