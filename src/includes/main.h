@@ -75,6 +75,8 @@ inline void setupEffet(){
     DelaysObj[i].setDelayTime(0.6f);
     DelaysObj[i].setVolume(1.0f);
 
+    // Différents type de disto : 
+    // 0 = Hard, 1 = Soft, 2 = Fuzz, 3 = Tube, 4 = Multi, 5 = Diode, 6 = Disto DAFX, 7 = OD DAFX
     DistosObj[i].setDistoMode(1);
     DistosObj[i].setVolume(0.01f);
          
@@ -82,6 +84,7 @@ inline void setupEffet(){
     TremolosObj[i].setDepth(1.0f);
     TremolosObj[i].setWaveform(0);
     // TremolosObj[i].setPhaseOffset(0.0f);
+    // Trois modes pour le tremolo : SYNC, DEPHASED, CUSTOM. 
     TremolosObj[i].setPhaseMode(TremoloEffect::SYNC);
     TremolosObj[i].setGlobalRate(5.0f);
 
@@ -95,11 +98,11 @@ inline void setupEffet(){
     // /*setBand(numéro de la bande {80.0f, 250.0f, 750.0f, 2200.0f, 6600.0f}
     //          , valeure normalisée [0 = -12dB, 1 = +12dB]
     //          )*/
-    EqualizersObj[i].setBand(0, 0.0f); 
-    EqualizersObj[i].setBand(1, 0.0f); 
-    EqualizersObj[i].setBand(2, 0.0f); 
-    EqualizersObj[i].setBand(3, 0.0f); 
-    EqualizersObj[i].setBand(4, 0.0f); 
+    EqualizersObj[i].setBand(0, 0.5f); 
+    EqualizersObj[i].setBand(1, 0.5f); 
+    EqualizersObj[i].setBand(2, 0.5f); 
+    EqualizersObj[i].setBand(3, 0.5f); 
+    EqualizersObj[i].setBand(4, 0.5f); 
     EqualizersObj[i].setVolume(1.0f);
 
     CompresseurObj[i].setThreshold(-15.0f);

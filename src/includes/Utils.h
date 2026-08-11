@@ -2,7 +2,7 @@
 
 #define TEENSY 1
 
-#define Osc 0
+#define Osc 1
 #if Osc
 #define OscCodec 1
 #else 

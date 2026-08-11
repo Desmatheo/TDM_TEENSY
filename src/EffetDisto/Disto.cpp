@@ -95,13 +95,13 @@ float DistoEffect::tubeSaturation(float input, float gainVal) {
 
 float DistoEffect::multiStage(float sample, float drive, float intensityVal) {
     // First stage
-    const float stage1 = softClipping(sample, drive * intensity * 2.0f);
+    const float stage1 = softClipping(sample, drive * intensityVal * 2.0f);
 
     // Second stage
-    const float stage2 = softClipping(stage1, drive * intensity);
+    const float stage2 = softClipping(stage1, drive * intensityVal);
 
     // Power amp, mimic second tube clipping, possibly negative feedback
-    const float result = tubeSaturation(stage2, drive * intensity);
+    const float result = tubeSaturation(stage2, drive * intensityVal);
 
     return result;
 }
@@ -113,8 +113,8 @@ float DistoEffect::testDistortion(float input, float gainVal){
 }
 
 float DistoEffect::testOverDrive(float input){
-    float threshold = 1.0f - intensity;
-    if (threshold < 0.0001f) threshold = 0.0001f;
+    // Le polynôme cubique ci-dessous exige que le threshold soit exactement 1/3 pour être mathématiquement continu
+    float threshold = 1.0f / 3.0f; 
     
     float abs_input = std::abs(input);
     float sign = (input > 0.0f) ? 1.0f : ((input < 0.0f) ? -1.0f : 0.0f);
@@ -134,18 +134,19 @@ float DistoEffect::testOverDrive(float input){
 float DistoEffect::testFuzz(float input, float gainVal){
 
     // Dans une fuzz, le gain appliqué en amont est souvent énorme (ex: x50 ou x100)
+    float driven = input * gainVal;
     
     // Si le signal est positif, on le force au maximum (1.0)
-    if (input > 0.05f) {
+    if (driven > 0.05f) {
         return 1.0f;
     } 
     // S'il est négatif, on le force au minimum (-1.0)
-    else if (input < -0.05f) {
+    else if (driven < -0.05f) {
         return -1.0f;
     }
     // Zone de transition très fine pour garder un tout petit peu d'attaque
     else {
-        return input * gainVal * 2.0f; // Amplification pour la zone de transition
+        return driven * 20.0f; // Amplification pour la zone de transition (0.05 * 20 = 1.0)
     }
 }
 
@@ -207,7 +208,8 @@ void DistoEffect::processDistortion(float &sample,           // Sample to proces
         {
             float driven = sample * gainVal;
             float thresh = 1.0f - (intensityVal * 0.9f);
-            sample = diodeClipping(driven, thresh) / thresh;
+            // La valeur maximale de diodeClipping tend vers (thresh + 1.0f)
+            sample = diodeClipping(driven, thresh) / (thresh + 1.0f);
         }
         break;
     case 6: // Test Distortion (Exponential soft clip)

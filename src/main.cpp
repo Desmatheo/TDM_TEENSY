@@ -130,7 +130,7 @@ void setup()
 #endif
 
 #if GuitareCodec || OscCodec
-  pinMode(reset_p, OUTPUT);                                    
+  pinMode(reset_p, OUTPUT);
   //Power-Up Sequence
   digitalWrite(reset_p, LOW);
   delay(800);
