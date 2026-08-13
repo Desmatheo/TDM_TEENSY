@@ -18,7 +18,7 @@ AudioMixer4              mixer_1a4;
 AudioMixer4              mixer_5et6;  
 AudioMixer4              master;      
 
-// 6 canaux hexa vers la Daisy : ports PAIRS 0..10 = slots 0..5
+// /!\ Configurer dans includes/Utils.h 
 #if Osc
 #if OscCodec
 AudioConnection c0(osc[0], 0, BypassObj[0], 0);
@@ -177,12 +177,12 @@ void setup()
 float tmp = 0.1f;
 
 #if AccordCool
-  // osc[0].begin(tmp * 3 * 0.015f, 110.00f, WAVEFORM_SINE); // 110..660 Hz
-  // osc[1].begin(tmp * 0.005f, 329.63f, WAVEFORM_SINE); // 110..660 Hz
-  // osc[2].begin(tmp * 3 * 0.015f, 440.00f, WAVEFORM_SINE); // 110..660 Hz
-  // osc[3].begin(tmp * 0.005f, 554.37f, WAVEFORM_SINE); // 110..660 Hz
-  // osc[4].begin(tmp * 0.005f, 659.26f, WAVEFORM_SINE); // 110..660 Hz
-  // osc[5].begin(tmp * 3 * 0.015f, 880.00f, WAVEFORM_SINE); // 110..660 Hz
+  osc[0].begin(tmp * 3 * 0.015f, 110.00f, WAVEFORM_SINE); // 110..660 Hz
+  osc[1].begin(tmp * 0.005f, 329.63f, WAVEFORM_SINE); // 110..660 Hz
+  osc[2].begin(tmp * 3 * 0.015f, 440.00f, WAVEFORM_SINE); // 110..660 Hz
+  osc[3].begin(tmp * 0.005f, 554.37f, WAVEFORM_SINE); // 110..660 Hz
+  osc[4].begin(tmp * 0.005f, 659.26f, WAVEFORM_SINE); // 110..660 Hz
+  osc[5].begin(tmp * 3 * 0.015f, 880.00f, WAVEFORM_SINE); // 110..660 Hz
 #else
 // Sinuzoide pour tout le monde ! 
   for (int i = 0; i < 6; i++){
