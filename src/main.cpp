@@ -36,12 +36,21 @@ AudioConnection c4(sweep[4], 0, BypassObj[4], 0);
 AudioConnection c5(sweep[5], 0, BypassObj[5], 0);
 #endif
 #elif USBIn
+#if USBHex
 AudioConnection c0(usbIn, 0, BypassObj[0], 0);
 AudioConnection c1(usbIn, 1, BypassObj[1], 0);
 AudioConnection c2(usbIn, 2, BypassObj[2], 0);
 AudioConnection c3(usbIn, 3, BypassObj[3], 0);
 AudioConnection c4(usbIn, 4, BypassObj[4], 0);
 AudioConnection c5(usbIn, 5, BypassObj[5], 0);
+#else
+AudioConnection c0(usbIn, 0, BypassObj[0], 0);
+AudioConnection c1(usbIn, 0, BypassObj[1], 0);
+AudioConnection c2(usbIn, 0, BypassObj[2], 0);
+AudioConnection c3(usbIn, 1, BypassObj[3], 0);
+AudioConnection c4(usbIn, 1, BypassObj[4], 0);
+AudioConnection c5(usbIn, 1, BypassObj[5], 0);
+#endif
 #elif GuitareCodec
 AudioConnection c0(tdm_codec_in, 10, BypassObj[0], 0);
 AudioConnection c1(tdm_codec_in,  8, BypassObj[1], 0);
@@ -160,21 +169,29 @@ void setup()
 
 #if Osc
 #if OscCodec
+// Commenter / décommenter si on veut un "accord", 
+// ou si on veut une meme fréquence sur tous les cannaux
 // test accord sympa :)
+
+// varriable pour ajuster le volume
 float tmp = 0.1f;
+
+#if AccordCool
   // osc[0].begin(tmp * 3 * 0.015f, 110.00f, WAVEFORM_SINE); // 110..660 Hz
   // osc[1].begin(tmp * 0.005f, 329.63f, WAVEFORM_SINE); // 110..660 Hz
   // osc[2].begin(tmp * 3 * 0.015f, 440.00f, WAVEFORM_SINE); // 110..660 Hz
   // osc[3].begin(tmp * 0.005f, 554.37f, WAVEFORM_SINE); // 110..660 Hz
   // osc[4].begin(tmp * 0.005f, 659.26f, WAVEFORM_SINE); // 110..660 Hz
   // osc[5].begin(tmp * 3 * 0.015f, 880.00f, WAVEFORM_SINE); // 110..660 Hz
-
+#else
 // Sinuzoide pour tout le monde ! 
   for (int i = 0; i < 6; i++){
     osc[i].begin(tmp * 0.015f, 440.00f, WAVEFORM_SINE); // 110..660 Hz
   }
+#endif
 
 #elif SweepCodec
+// sweep 20 => 20kHz
   sweep[0].play(0.01f, 20.0f, 20000.0f, 5.0f);
   sweep[1].play(0.01f, 20.0f, 20000.0f, 5.0f);
   sweep[2].play(0.01f, 20.0f, 20000.0f, 5.0f);

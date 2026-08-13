@@ -260,53 +260,9 @@ float DistoEffect::ProcessTiltToneControl(float input) {
     return lp * (1.f - toneAmount) + hp * toneAmount;
 }
 
-// Utilisation si l'effet est utilisé dans le chainage
 #if !TEENSY
 void DistoEffect::update(const float** in, float** out, int idx) {
-    float inputL;
-    float inputR;
-
-    // Bruit de Nyquist (alterné) : +1e-9f, -1e-9f, +1e-9f...
-    // Contrairement au courant continu (DC), ce bruit traverse le filtre passe-haut (preFilter)
-    // et empêche tous les filtres suivants (postFilter) de crasher sur des nombres sous-normaux.
-    anti_denormal = -anti_denormal;
-
-    inputL = inputR = in[0][idx] + anti_denormal;
-
-    float distorted = inputL;
-
-    // Apply high-pass filter to remove excessive low frequencies
-    // (preFilter cutoff is now fixed in InitializeFilters to prevent audio-rate modulation crash)
-    distorted = preFilter(distorted);
-
-
-    const float computed_gain = min_gain + (this->gain * (max_gain - min_gain));
-
-    // Reduce signal amplitude before clipping
-    distorted = distorted * 0.5f;
-    if (oversamp) {
-        float up1 = upsamplingLowpassFilter(distorted * 2.0f);
-        float up2 = upsamplingLowpassFilter(0.0f);
-        processDistortion(up1, computed_gain, effect_mode, intensity);
-        processDistortion(up2, computed_gain, effect_mode, intensity);
-        distorted = downsamplingLowpassFilter(up1);
-        downsamplingLowpassFilter(up2);
-    } else {
-        processDistortion(distorted, computed_gain, effect_mode, intensity);
-    }
-
-    // Post-filter: Low-pass to smooth out harsh high frequencies
-    distorted = postFilter(distorted);
-
-    // Normalize the volume between the types of distortion
-    normalizeVolume(distorted, effect_mode);
-
-    // Apply tilt-tone filter
-    const float effect_output = ProcessTiltToneControl(distorted);
-
-    // Mixage final dry/wet pour cet effet de corde
-    out[0][idx] = (inputL * dryMix + effect_output * wetMix) * volume;
-    out[1][idx] = out[0][idx];
+    // Implementer le code Daisy si on veut la classe soit utilisable partout 
 }
 #else
 #if !UtilBypassRoutage

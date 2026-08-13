@@ -50,6 +50,9 @@ void NoiseGateEffect::setParameter(int param_id, float value) {
     }
 }
 #if !TEENSY
+void NoiseGateEffect::update(const float** in, float** out, int idx) {
+    // Implementer le code Daisy si on veut la classe soit utilisable partout 
+}
 #else
 #if !UtilBypassRoutage
 void NoiseGateEffect::update() {

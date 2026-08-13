@@ -68,7 +68,7 @@ void CompresseurEffect::setParameter(int param_id, float value) {
 
 #if !TEENSY
 void CompresseurEffect::update(const float** in, float** out, int idx) {
-    // Daisy not implemented
+    // Implementer le code Daisy si on veut la classe soit utilisable partout 
 }
 #else
 #if !UtilBypassRoutage

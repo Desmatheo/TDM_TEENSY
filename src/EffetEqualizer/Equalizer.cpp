@@ -81,7 +81,7 @@ void EqualizerEffect::setParameter(int param_id, float value) {
 
 #if !TEENSY
 void EqualizerEffect::update(const float** in, float** out, int idx) {
-    // Non implémenté pour Daisy actuellement
+    // Implementer le code Daisy si on veut la classe soit utilisable partout 
 }
 #else
 #if !UtilBypassRoutage
