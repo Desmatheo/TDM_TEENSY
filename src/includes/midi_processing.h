@@ -85,12 +85,14 @@ static void OnControlChange(byte channel, byte control, byte value) {
     #pragma region Control MIDI
     float valNorm = value / 127.0f;
     
+#if SerialUSB
     Serial.print("Test MIDI => Channel : ");
     Serial.print(channel);
     Serial.print(", Control: ");
     Serial.print(control);
     Serial.print(", Value : ");
     Serial.println(value);
+#endif
 
     // Selection de la corde
     int targetCorde = -1;
