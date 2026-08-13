@@ -19,13 +19,22 @@ AudioMixer4              mixer_5et6;
 AudioMixer4              master;      
 
 // 6 canaux hexa vers la Daisy : ports PAIRS 0..10 = slots 0..5
-#if Osc || OscCodec
+#if Osc
+#if OscCodec
 AudioConnection c0(osc[0], 0, BypassObj[0], 0);
 AudioConnection c1(osc[1], 0, BypassObj[1], 0);
 AudioConnection c2(osc[2], 0, BypassObj[2], 0);
 AudioConnection c3(osc[3], 0, BypassObj[3], 0);
 AudioConnection c4(osc[4], 0, BypassObj[4], 0);
 AudioConnection c5(osc[5], 0, BypassObj[5], 0);
+#elif SweepCodec
+AudioConnection c0(sweep[0], 0, BypassObj[0], 0);
+AudioConnection c1(sweep[1], 0, BypassObj[1], 0);
+AudioConnection c2(sweep[2], 0, BypassObj[2], 0);
+AudioConnection c3(sweep[3], 0, BypassObj[3], 0);
+AudioConnection c4(sweep[4], 0, BypassObj[4], 0);
+AudioConnection c5(sweep[5], 0, BypassObj[5], 0);
+#endif
 #elif USBIn
 AudioConnection c0(usbIn, 0, BypassObj[0], 0);
 AudioConnection c1(usbIn, 1, BypassObj[1], 0);
@@ -110,7 +119,7 @@ AudioConnection mast2(mixer_5et6, 0, master, 1);
 AudioConnection p_outL_usb(master, 0, usbOut, 0);
 AudioConnection p_outR_usb(master, 0, usbOut, 1);
 #endif
-#if OscCodec || GuitareCodec
+#if OscCodec || GuitareCodec || SweepCodec
 AudioConnection f1(master, 0, tdm_codec_out, 12);
 AudioConnection f2(master, 0, tdm_codec_out, 14);
 #endif
@@ -129,7 +138,7 @@ void setup()
   Serial.begin(115200);
 #endif
 
-#if GuitareCodec || OscCodec
+#if GuitareCodec || OscCodec || SweepCodec
   pinMode(reset_p, OUTPUT);
   //Power-Up Sequence
   digitalWrite(reset_p, LOW);
@@ -149,22 +158,30 @@ void setup()
   cs42448_1.volume(1.0);
 #endif
 
-#if Osc || OscCodec
+#if Osc
+#if OscCodec
 // test accord sympa :)
-  osc[0].begin(3 * 0.015f, 110.00f, WAVEFORM_SINE); // 110..660 Hz
-  osc[1].begin(0.005f, 329.63f, WAVEFORM_SINE); // 110..660 Hz
-  osc[2].begin(3 * 0.015f, 440.00f, WAVEFORM_SINE); // 110..660 Hz
-  osc[3].begin(0.005f, 554.37f, WAVEFORM_SINE); // 110..660 Hz
-  osc[4].begin(0.005f, 659.26f, WAVEFORM_SINE); // 110..660 Hz
-  osc[5].begin(3 * 0.015f, 880.00f, WAVEFORM_SINE); // 110..660 Hz
+float tmp = 0.1f;
+  // osc[0].begin(tmp * 3 * 0.015f, 110.00f, WAVEFORM_SINE); // 110..660 Hz
+  // osc[1].begin(tmp * 0.005f, 329.63f, WAVEFORM_SINE); // 110..660 Hz
+  // osc[2].begin(tmp * 3 * 0.015f, 440.00f, WAVEFORM_SINE); // 110..660 Hz
+  // osc[3].begin(tmp * 0.005f, 554.37f, WAVEFORM_SINE); // 110..660 Hz
+  // osc[4].begin(tmp * 0.005f, 659.26f, WAVEFORM_SINE); // 110..660 Hz
+  // osc[5].begin(tmp * 3 * 0.015f, 880.00f, WAVEFORM_SINE); // 110..660 Hz
 
+// Sinuzoide pour tout le monde ! 
+  for (int i = 0; i < 6; i++){
+    osc[i].begin(tmp * 0.015f, 440.00f, WAVEFORM_SINE); // 110..660 Hz
+  }
 
-  // osc[0].begin(0.21f, 80.0f, WAVEFORM_SINE); // 110..660 Hz
-  // osc[1].begin(0.01f, 250.0f, WAVEFORM_SINE); // 110..660 Hz
-  // osc[2].begin(0.11f, 750.0f, WAVEFORM_SINE); // 110..660 Hz
-  // osc[3].begin(0.01f, 2200.00f, WAVEFORM_SINE); // 110..660 Hz
-  // osc[4].begin(0.01f, 6600.00f, WAVEFORM_SINE); // 110..660 Hz
-  // osc[5].begin(0.11f, 80.0f, WAVEFORM_SINE); // 110..660 Hz
+#elif SweepCodec
+  sweep[0].play(0.01f, 20.0f, 20000.0f, 5.0f);
+  sweep[1].play(0.01f, 20.0f, 20000.0f, 5.0f);
+  sweep[2].play(0.01f, 20.0f, 20000.0f, 5.0f);
+  sweep[3].play(0.01f, 20.0f, 20000.0f, 5.0f);
+  sweep[4].play(0.01f, 20.0f, 20000.0f, 5.0f);
+  sweep[5].play(0.01f, 20.0f, 20000.0f, 5.0f);
+#endif
 #endif
 
 #if UtilEffet
@@ -186,6 +203,16 @@ void loop()
 {
 #if USE_MIDI_USB
   usbMIDI.read();
+#endif
+
+#if Osc
+#if SweepCodec
+  for (int i = 0; i < 6; i++){
+    if (!sweep[i].isPlaying()) {
+      sweep[i].play(0.01f, 20.0f, 20000.0f, 5.0f);
+    }
+  }
+#endif
 #endif
 
   unsigned long tempsActuel = millis();

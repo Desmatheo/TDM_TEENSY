@@ -4,6 +4,7 @@
 
 #define Osc 1
 #if Osc
+#define SweepCodec 0
 #define OscCodec 1
 #else 
 #define GuitareCodec 1

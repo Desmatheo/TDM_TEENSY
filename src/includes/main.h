@@ -10,11 +10,16 @@
 #include "../EffetCompresseur/Compresseur.h"
 #include "Utils.h"
 
-#if Osc || OscCodec
+#if Osc
+#if SweepCodec
+AudioSynthToneSweep sweep[6];
+#endif
+#if OscCodec
 AudioSynthWaveform osc[6];
-#endif    
+#endif 
+#endif   
 
-#if OscCodec || GuitareCodec
+#if OscCodec || GuitareCodec || SweepCodec
 DMAMEM AudioControlCS42448 cs42448_1;      // Contrôleur matériel CsS42448dd
 
 AudioInputTDM       tdm_codec_in;
@@ -78,7 +83,7 @@ inline void setupEffet(){
     // Différents type de disto : 
     // 0 = Hard, 1 = Soft, 2 = Fuzz, 3 = Tube, 4 = Multi, 5 = Diode, 6 = Disto DAFX, 7 = OD DAFX
     DistosObj[i].setDistoMode(1);
-    DistosObj[i].setVolume(0.01f);
+    DistosObj[i].setVolume(1.0f);
          
     TremolosObj[i].setMix(1.0f);
     TremolosObj[i].setDepth(1.0f);
