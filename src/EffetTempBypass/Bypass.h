@@ -21,7 +21,7 @@ public:
                 preampVal = 0.75f * 10.0f;
                 break;
             case 1:
-                preampVal = 0.75f * 14.0f * 2.0f;
+                preampVal = 0.75f * 14.0f * 1.0f;
                 break;
             case 2:
                 preampVal = 0.75f * 12.0f;
