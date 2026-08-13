@@ -42,7 +42,7 @@ class OctaverEffect
 #endif
 
     void setMix(float mix);                // Ctrl 2 (0.0 -> 1.0)
-    void setVolume(float vol);             // Ctrl 1 (0.0 -> 1.0)
+    void setVolume(float vol);             // Ctrl 1 (0.0 -> 2.0, 1.0 par défaut)
 
     void setOctaveMode(int mode);          // 3-Way Switch 2 (0, 1, 2)
 

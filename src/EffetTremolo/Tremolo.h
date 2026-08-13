@@ -33,7 +33,7 @@ public:
     void setRate(float rate_hz);
     void setLocalRate(float rate_hz);
     void setWaveform(int mode);
-    void setVolume(float vol);
+    void setVolume(float vol); // volume de 0.0 à 2.0 (1.0 par défaut)
     void setParameter(int param_id, float value);
  
     // Phase modes: 0=Sync, 1=Dephased, 2=Custom

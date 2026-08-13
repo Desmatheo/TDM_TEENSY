@@ -86,7 +86,7 @@ void TremoloEffect::setWaveform(int mode) {
 void TremoloEffect::setVolume(float vol) {
     volume = vol;
     if (volume < 0.0f) volume = 0.0f;
-    if (volume > 1.0f) volume = 1.0f;
+    if (volume > 2.0f) volume = 2.0f;
 }
  
 void TremoloEffect::setParameter(int param_id, float value) {
@@ -105,7 +105,7 @@ void TremoloEffect::setParameter(int param_id, float value) {
             else if (value < 0.66f) setPhaseMode(DEPHASED);
             else setPhaseMode(CUSTOM);
             break;
-        case 5: setVolume(value); break;
+        case 5: setVolume(value * 2.0f); break;
         case 6: setPhaseOffset(value); break;
         default: break;
     }

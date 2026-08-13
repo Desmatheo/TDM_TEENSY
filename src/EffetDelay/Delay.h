@@ -34,7 +34,7 @@ public:
 
     // Setters pour personnalisation
     void setMix(float mix);
-    void setVolume(float vol);
+    void setVolume(float vol); // volume de 0.0 à 2.0 (1.0 par défaut)
     void setDelayMode(float mode);
     void setDelayTime(float time);
     void setDelayTimeTap(float time);

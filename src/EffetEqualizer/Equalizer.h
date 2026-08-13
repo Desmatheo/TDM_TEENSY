@@ -33,7 +33,7 @@ public:
     void setBand(int band_index, float value_norm);
     
     // Définit le volume global de l'effet
-    void setVolume(float vol);
+    void setVolume(float vol); // volume de 0.0 à 2.0 (1.0 par défaut)
     
     virtual void setParameter(int param_id, float value) override;
 

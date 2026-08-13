@@ -67,13 +67,15 @@ void EqualizerEffect::setBand(int band_index, float value_norm) {
 
 void EqualizerEffect::setVolume(float vol) {
     volume = vol;
+    if (volume < 0.0f) volume = 0.0f;
+    if (volume > 2.0f) volume = 2.0f;
 }
 
 void EqualizerEffect::setParameter(int param_id, float value) {
     if (param_id >= 0 && param_id <= 4) {
         setBand(param_id, value);
     } else if (param_id == 5) {
-        setVolume(value);
+        setVolume(value * 2.0f);
     }
 }
 

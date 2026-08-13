@@ -191,7 +191,7 @@ void DelayEffect::setMix(float mix) {
 
 void DelayEffect::setVolume(float vol)
 {
-    volume = clampf(vol, 0.0f, 1.0f);
+    volume = clampf(vol, 0.0f, 2.0f);
 }
 
 void DelayEffect::setDelayMode(float mode) {
@@ -292,7 +292,7 @@ void DelayEffect::setParameter(int param_id, float value) {
             setFeedback(value);
             break;
         case 5: // CC 15 - Volume
-            setVolume(value);
+            setVolume(value * 2.0f);
             break;
         case 6: // CC 16 - Mix
             setMix(value);

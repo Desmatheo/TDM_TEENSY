@@ -24,7 +24,7 @@ class DistoEffect
     static constexpr float preFilterCutoffBase = 140.0f;
     static constexpr float preFilterCutoffMax = 300.0f;
     static constexpr float postFilterCutoff = 8000.0f;
-    static constexpr uint8_t overFactor = 16;
+    static constexpr uint8_t overFactor = 2;
 
     DistoEffect(float sampleRate = AUDIO_SAMPLE_RATE_EXACT); 
 
@@ -43,7 +43,7 @@ class DistoEffect
     void setTone(float tone);               // param_id 3
     void setIntensity(float intensity);     // param_id 4
     void setOversamp(bool oversamp);        // param_id 5
-    void setVolume(float vol);              // param_id 6
+    void setVolume(float vol);              // param_id 6, volume de 0.0 à 2.0 (1.0 par défaut)
     
     void InitializeFilters();
 
@@ -80,6 +80,7 @@ private:
     cycfi::q::highpass preFilter;
     cycfi::q::lowpass postFilter;
     cycfi::q::lowpass upsamplingLowpassFilter;
+    cycfi::q::lowpass downsamplingLowpassFilter;
 
     // Helper functions for distortion and clipping
     float hardClipping(float input, float threshold);
@@ -93,8 +94,6 @@ private:
     float testOverDrive(float input);
     float testFuzz(float input, float gainVal);
     
-    std::vector<float> upsample(const std::vector<float> &input, int factor, float sample_rate);
-    std::vector<float> downsample(const std::vector<float> &input, int factor);
     void processDistortion(float &sample, const float &gainVal, const int &clippingType, const float &intensityVal);
     void normalizeVolume(float &sample, int clippingType);
 };

@@ -26,7 +26,8 @@ DistoEffect::DistoEffect(float sampleRate) :
 #endif
       preFilter(preFilterCutoffBase, sampleRate),
       postFilter(postFilterCutoff, sampleRate),
-      upsamplingLowpassFilter(0.0f, sampleRate)
+      upsamplingLowpassFilter(0.0f, sampleRate),
+      downsamplingLowpassFilter(0.0f, sampleRate)
 {
     tone.Init(sampleRate);
 
@@ -47,14 +48,11 @@ DistoEffect::DistoEffect(float sampleRate) :
 
 void DistoEffect::InitializeFilters() {
     preFilter.config(preFilterCutoffBase, samplerate);
+    postFilter.config(postFilterCutoff, samplerate);
 
-    if (oversamp) {
-        postFilter.config(postFilterCutoff, samplerate * overFactor);
-    } else {
-        postFilter.config(postFilterCutoff, samplerate);
-    }
-
-    upsamplingLowpassFilter.config(samplerate / (2.0f * static_cast<float>(overFactor)), samplerate);
+    float nyquist = (samplerate / 2.0f) * 0.95f;
+    upsamplingLowpassFilter.config(nyquist, samplerate * overFactor);
+    downsamplingLowpassFilter.config(nyquist, samplerate * overFactor);
 }
 
 float DistoEffect::hardClipping(float input, float threshold) { 
@@ -113,6 +111,8 @@ float DistoEffect::testDistortion(float input, float gainVal){
 }
 
 float DistoEffect::testOverDrive(float input){
+#define OldOD 0
+#if OldOD
     // Le polynôme cubique ci-dessous exige que le threshold soit exactement 1/3 pour être mathématiquement continu
     float threshold = 1.0f / 3.0f; 
     
@@ -129,6 +129,25 @@ float DistoEffect::testOverDrive(float input){
         float tmp = 2.0f - abs_input * 3.0f;
         return sign * ((3.0f - tmp * tmp) / 3.0f);      
     }
+#else
+    if (input >= 0.0f) {
+        if (input <= 1.0f / 3.0f) {
+            return 2.0f * input;
+        } else if (input <= 2.0f / 3.0f) {
+            return -3.0f * input * input + 4.0f * input - (1.0f / 3.0f);
+        } else {
+            return 1.0f;
+        }
+    } else {
+        if (input >= -1.0f / 3.0f) {
+            return 2.0f * input;
+        } else if (input >= -2.0f / 3.0f) {
+            return 3.0f * input * input + 4.0f * input + (1.0f / 3.0f);
+        } else {
+            return -1.0f;
+        }
+    }
+#endif
 }
 
 float DistoEffect::testFuzz(float input, float gainVal){
@@ -148,31 +167,6 @@ float DistoEffect::testFuzz(float input, float gainVal){
     else {
         return driven * 20.0f; // Amplification pour la zone de transition (0.05 * 20 = 1.0)
     }
-}
-
-// Helper functions for oversampling
-std::vector<float> DistoEffect::upsample(const std::vector<float> &input, int factor, float sample_rate) {
-    std::vector<float> output(input.size() * factor, 0.0f);
-
-    for (size_t i = 0; i < input.size(); ++i) {
-        // Insert input samples, leaving zeros in between. Scale by factor to preserve energy after lowpass.
-        output[i * factor] = input[i] * factor;
-    }
-
-    // Apply the low-pass filter to smooth interpolated samples
-    for (size_t i = 0; i < output.size(); ++i) {
-        output[i] = upsamplingLowpassFilter(output[i]);
-    }
-
-    return output;
-}
-
-std::vector<float> DistoEffect::downsample(const std::vector<float> &input, int factor) {
-    std::vector<float> output(input.size() / factor);
-    for (size_t i = 0; i < output.size(); ++i) {
-        output[i] = input[i * factor]; // Take every nth sample
-    }
-    return output;
 }
 
 void DistoEffect::processDistortion(float &sample,           // Sample to process
@@ -290,9 +284,16 @@ void DistoEffect::update(const float** in, float** out, int idx) {
 
     // Reduce signal amplitude before clipping
     distorted = distorted * 0.5f;
-
-
-    processDistortion(distorted, computed_gain, effect_mode, intensity);
+    if (oversamp) {
+        float up1 = upsamplingLowpassFilter(distorted * 2.0f);
+        float up2 = upsamplingLowpassFilter(0.0f);
+        processDistortion(up1, computed_gain, effect_mode, intensity);
+        processDistortion(up2, computed_gain, effect_mode, intensity);
+        distorted = downsamplingLowpassFilter(up1);
+        downsamplingLowpassFilter(up2);
+    } else {
+        processDistortion(distorted, computed_gain, effect_mode, intensity);
+    }
 
     // Post-filter: Low-pass to smooth out harsh high frequencies
     distorted = postFilter(distorted);
@@ -342,7 +343,16 @@ void DistoEffect::update() {
         // Reduce signal amplitude before clipping
         distorted = distorted * 0.5f;
 
-        processDistortion(distorted, computed_gain, effect_mode, intensity);
+        if (oversamp) {
+            float up1 = upsamplingLowpassFilter(distorted * 2.0f);
+            float up2 = upsamplingLowpassFilter(0.0f);
+            processDistortion(up1, computed_gain, effect_mode, intensity);
+            processDistortion(up2, computed_gain, effect_mode, intensity);
+            distorted = downsamplingLowpassFilter(up1);
+            downsamplingLowpassFilter(up2);
+        } else {
+            processDistortion(distorted, computed_gain, effect_mode, intensity);
+        }
 
         // Post-filter: Low-pass to smooth out harsh high frequencies
         distorted = postFilter(distorted);
@@ -387,7 +397,16 @@ void DistoEffect::update(float* buffer, int numSamples) {
         // Reduce signal amplitude before clipping
         distorted = distorted * 0.5f;
 
-        processDistortion(distorted, computed_gain, effect_mode, intensity);
+        if (oversamp) {
+            float up1 = upsamplingLowpassFilter(distorted * 2.0f);
+            float up2 = upsamplingLowpassFilter(0.0f);
+            processDistortion(up1, computed_gain, effect_mode, intensity);
+            processDistortion(up2, computed_gain, effect_mode, intensity);
+            distorted = downsamplingLowpassFilter(up1);
+            downsamplingLowpassFilter(up2);
+        } else {
+            processDistortion(distorted, computed_gain, effect_mode, intensity);
+        }
 
         // Post-filter: Low-pass to smooth out harsh high frequencies
         distorted = postFilter(distorted);
@@ -422,7 +441,7 @@ void DistoEffect::setTone(float freq) {
 }
 
 void DistoEffect::setVolume(float vol){
-    volume = clampf(vol, 0.0f, 1.0f);
+    volume = clampf(vol, 0.0f, 2.0f);
 }
 
 void DistoEffect::setOversamp(bool tmp){
@@ -465,7 +484,7 @@ void DistoEffect::setParameter(int param_id, float value) {
             setOversamp(value);
             break;
         case 6 : 
-            setVolume(value);
+            setVolume(value * 2.0f);
             break;
         default:
 #if SerialUSB

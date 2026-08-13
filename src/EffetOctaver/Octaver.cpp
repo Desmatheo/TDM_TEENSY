@@ -157,7 +157,7 @@ void OctaverEffect::setMix(float mix) {
 
 void OctaverEffect::setVolume(float vol)
 {
-    volume = clampf(vol, 0.0f, 1.0f);
+    volume = clampf(vol, 0.0f, 2.0f);
 }
 
 void OctaverEffect::setOctaveMode(int mode) {
@@ -176,7 +176,7 @@ void OctaverEffect::setParameter(int param_id, float value) {
             else setOctaveMode(3);
             break; 
         case 5 : 
-            setVolume(value);
+            setVolume(value * 2.0f);
             break;
         default:
 #if SerialUSB
