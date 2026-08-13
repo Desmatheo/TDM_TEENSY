@@ -21,7 +21,7 @@ Pour obtenir un filtre en cloche (qui amplifie ou atténue une fréquence centra
 
 ### 1.2 Calcul des coefficients (Audio EQ Cookbook)
 
-L'implémentation repose sur les formules standard de l'Audio EQ Cookbook (souvent attribuées à Robert Bristow-Johnson). Pour un filtre *peaking EQ*, on procède ainsi :
+L'implémentation repose sur les formules standard de l'Audio EQ Cookbook, le document de référence rédigé par Robert Bristow-Johnson (voir la section Sources). Pour un filtre *peaking EQ*, on procède ainsi :
 
 1. **Calcul de l'amplitude $A$** :
    $$ A = 10^{\frac{\text{Gain}_{dB}}{40}} $$
@@ -74,7 +74,7 @@ Un égaliseur à $N$ bandes est simplement constitué de $N$ filtres biquadratiq
 
 ## 2. Implémentation du Code et Algorithmique
 
-L'effet est implémenté dans la classe `EqualizerEffect` (`Equalizer.cpp` et `Equalizer.h`). L'algorithme repose sur une approche par **blocs d'échantillons** (buffer) et utilise la bibliothèque CMSIS DSP pour traiter **5 filtres biquadratiques en série**.
+L'effet est implémenté dans la classe `EqualizerEffect` (`Equalizer.cpp` et `Equalizer.h`). L'algorithme repose sur une approche par **blocs d'échantillons** (buffer) et utilise la bibliothèque logicielle de traitement du signal d'ARM, **CMSIS-DSP**, pour traiter **5 filtres biquadratiques en série**.
 
 ### 2.1 Variables d'état et Initialisation (Le Constructeur)
 
@@ -165,3 +165,10 @@ gains_db[band_index] = (value_norm - 0.5f) * 24.0f;
 ## Conclusion
 
 Cette implémentation de l'égaliseur est à la fois robuste et très performante. L'utilisation de mathématiques standard pour les filtres IIR (*Audio EQ Cookbook*) garantit une réponse en fréquence musicale. Au niveau algorithmique, l'utilisation d'un traitement par blocs de 128 échantillons et de la bibliothèque **CMSIS DSP** permet au microcontrôleur d'appliquer les 5 filtres en cascade avec une efficacité redoutable, minimisant l'impact sur le CPU tout en conservant une grande flexibilité de contrôle.
+
+## 3. Sources et Bibliographie
+
+- **Robert Bristow-Johnson (RBJ)**, *Cookbook formulae for audio EQ biquad filter coefficients*. Document de référence de l'industrie pour calculer les filtres IIR.
+  [Lien vers la spécification du W3C Audio WG (Audio EQ Cookbook)](https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html)
+- **ARM**, *Documentation officielle CMSIS-DSP (Cortex Microcontroller Software Interface Standard)*. Détaille l'optimisation mathématique des filtres Biquad sur architecture ARM, le format des variables d'états, et la normalisation des coefficients.
+  [Lien vers la documentation ARM CMSIS-DSP (Biquad Cascade IIR Filters Using Direct Form I Structure)](https://arm-software.github.io/CMSIS_5/DSP/html/group__BiquadCascadeDF1.html)
