@@ -41,12 +41,12 @@ struct BypassCCMapping {
 };
 static constexpr BypassCCMapping bypassCCMap[] = {
     {48,  EFX_DELAY},
-    {75,  EFX_EQUALIZER},
+    // {75,  EFX_EQUALIZER}, // Bypass EQ supprimé car CC 75 est utilisé par le paramètre 6 sur Daisy
     {88,  EFX_DISTO},
     {89,  EFX_OCTAVER},
     {99,  EFX_COMPRESSEUR},
     {118, EFX_TREMOLO},
-    {119, EFX_NOISEGATE},
+    {38,  EFX_NOISEGATE},
 };
 static constexpr int NUM_BYPASS_CC = sizeof(bypassCCMap) / sizeof(bypassCCMap[0]);
 
@@ -60,11 +60,11 @@ struct ParamCCRange {
 static constexpr ParamCCRange paramRanges[] = {
     {10,  16,  EFX_DELAY,     "DELAY"},
     {50,  56,  EFX_DISTO,     "DISTO"},
-    {76,  81,  EFX_EQUALIZER, "EQUALIZER"},
+    {70,  75,  EFX_EQUALIZER, "EQUALIZER"},
     {90,  95,  EFX_OCTAVER,   "OCTAVER"},
     {100, 104, EFX_COMPRESSEUR, "COMPRESSEUR"},
     {110, 116, EFX_TREMOLO,   "TREMOLO"},
-    {120, 122, EFX_NOISEGATE, "NOISE GATE"},
+    {30,  32,  EFX_NOISEGATE, "NOISE GATE"},
 };
 static constexpr int NUM_PARAM_RANGES = sizeof(paramRanges) / sizeof(paramRanges[0]);
 

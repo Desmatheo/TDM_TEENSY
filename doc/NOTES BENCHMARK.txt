@@ -1,0 +1,124 @@
+NOTES BENCHMARK 
+
+
+Les mesures sont prises sur Teensy. 
+
+Consommation de base (Delay)
+Delay : 
+1 corde : 3%
+6 cordes : 10%
+note : Le temps de Delay ne varie pas la consomation CPU
+
+
+
+Distortion : 
+Hard Clip : 
+1 corde : 3%
+1 corde Ovesamplé (2x) : 4%
+6 cordes : 9%
+6 cordes Oversamplé (2x) : 15%
+Soft Clip : 
+1 corde : 3%
+1 corde Ovesamplé (2x) : 4%
+6 cordes : 10%
+6 cordes Oversamplé (2x) : 16%
+Fuzz : 
+1 corde : 3%
+1 corde Ovesamplé (2x) : 4%
+6 cordes : 8%
+6 cordes Oversamplé (2x) : 11%
+Tube : 
+1 corde : 3%
+1 corde Ovesamplé (2x) : 4%
+6 cordes : 9%
+6 cordes Oversamplé (2x) : 14%
+Multi : 
+1 corde : 3%
+1 corde Ovesamplé (2x) : 5%
+6 cordes : 10%
+6 cordes Oversamplé (2x) : 20%
+Diode : 
+1 corde : 3%
+1 corde Ovesamplé (2x) : 4%
+6 cordes : 9%
+6 cordes Oversamplé (2x) : 15%
+Disto DAFX :  
+1 corde : 3%
+1 corde Ovesamplé (2x) : 4%
+6 cordes : 10%
+6 cordes Oversamplé (2x) : 19%
+OverDrive DAFX : 
+1 corde : 3%
+1 corde Ovesamplé (2x) : 4%
+6 cordes : 9%
+6 cordes Oversamplé (2x) : 14%
+
+
+
+Octaver : 
+1 corde Up 1 : 5%
+1 corde Down 1 : 6%
+1 corde Down 2 : 7%
+6 cordes Up 1 : 23%
+6 cordes Down 1 : 26%
+6 cordes Down 2 : 35%
+
+
+Tremolo : 
+1 corde Sin : 3%
+1 corde Tri : 2%
+1 corde Square : 2%
+1 corde Saw : 2%
+6 cordes Sin : 10%
+6 cordes Tri : 5%
+6 cordes Square : 4%
+6 cordes Saw : 4%
+
+
+EQ : 
+1 corde : 2%
+6 cordes : 5%
+
+
+Noise Gate : 
+1 corde : 2%
+6 cordes : 4%
+
+
+Compressor : 
+1 corde : 3%
+6 cordes : 12% 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
