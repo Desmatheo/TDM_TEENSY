@@ -30,7 +30,7 @@
 
 // Mettre les defines a 1 si on veut afficher la charge CPU dans le moniteur série ou en MIDI 
 // (les 2 sont compatibles en simultanés)
-#define CPU_Serial 0
+#define CPU_Serial 1
 #define CPU_MIDI 1
 
 // Mettre le define a 1 si on veut utiliser le MIDI USB (pour envoyer le CPU_MIDI par exemple)
@@ -46,7 +46,7 @@
 
 // Mettre le define a 1 si on veut recevoir le signal en USB
 // Compatible avec la sortie CODEC TDM, on aura donc 2 sorties 
-#define USBOut 1
+#define USBOut 0
 #endif
 
 // Mettre le define a 1 si on veut que les effets soient appliqués

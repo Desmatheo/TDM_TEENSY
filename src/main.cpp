@@ -199,6 +199,10 @@ float tmp = 0.1f;
   sweep[4].play(0.01f, 20.0f, 20000.0f, 5.0f);
   sweep[5].play(0.01f, 20.0f, 20000.0f, 5.0f);
 #endif
+#endif  
+
+#if SerialUSB
+  Serial.println("Setup Effets");
 #endif
 
 #if UtilEffet
@@ -206,6 +210,10 @@ float tmp = 0.1f;
 #endif
 
   pinMode(LED_BUILTIN, OUTPUT);
+
+#if SerialUSB
+  Serial.println("Setup MIDI");
+#endif
 
 #if USE_MIDI_USB
   usbMIDI.setHandleControlChange(OnControlChange);
@@ -219,7 +227,7 @@ float tmp = 0.1f;
 void loop()
 {
 #if USE_MIDI_USB
-  usbMIDI.read();
+  while (usbMIDI.read()) { }  // Drainer tous les messages en attente
 #endif
 
 #if Osc
